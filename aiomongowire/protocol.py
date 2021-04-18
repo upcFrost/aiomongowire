@@ -1,9 +1,9 @@
 import asyncio
 import io
+import logging
+import traceback
 from asyncio import transports, Future, shield
 from typing import Optional, Dict
-
-from bson import UnknownSerializerError
 
 from aiomongowire.base_op import BaseOp
 
@@ -15,6 +15,7 @@ class MongoWireProtocol(asyncio.Protocol):
         self._transport: Optional[asyncio.Transport] = None
         self._msg_queue: asyncio.Queue[BaseOp] = asyncio.Queue()
         self._out_data: Dict[int, Future[BaseOp]] = dict()
+        self._logger = logging.getLogger('aiomongowire')
 
     async def send_data(self, data: BaseOp) -> Future:
         """
@@ -44,20 +45,20 @@ class MongoWireProtocol(asyncio.Protocol):
 
             try:
                 self._transport.write(bytes(data))
-            except UnknownSerializerError as exc:
-                print(exc)
+            except ValueError:
+                self._logger.error(traceback.format_exc())
 
     def data_received(self, data: bytes):
         try:
             data = BaseOp.from_data(io.BytesIO(data))
-        except Exception as exc:
-            print(exc)
+        except Exception:
+            self._logger.error(traceback.format_exc())
             return
 
         try:
             self._out_data[data.header.response_to].set_result(data)
         except KeyError:
-            print(f"Unexpected response to non-existent request {data.header.response_to}")
+            self._logger.error(f"Unexpected response to non-existent request {data.header.response_to}")
 
     def eof_received(self) -> Optional[bool]:
         return super().eof_received()
