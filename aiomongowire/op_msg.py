@@ -65,8 +65,8 @@ class OpMsg(BaseOp):
         Insert op body
         """
 
-        def __init__(self):
-            super().__init__({"insert": "collection", "$db": "test"})
+        def __init__(self, db: str, collection: str):
+            super().__init__({"insert": collection, "$db": db})
 
         @classmethod
         def identifier(cls) -> str:
@@ -77,8 +77,8 @@ class OpMsg(BaseOp):
         Update op body
         """
 
-        def __init__(self):
-            super().__init__({"update": "collection", "$db": "test"})
+        def __init__(self, db: str, collection: str):
+            super().__init__({"update": collection, "$db": db})
 
         @classmethod
         def identifier(cls) -> str:
@@ -89,8 +89,8 @@ class OpMsg(BaseOp):
         Delete op body
         """
 
-        def __init__(self):
-            super().__init__({"delete": "collection", "$db": "test"})
+        def __init__(self, db: str, collection: str):
+            super().__init__({"delete": collection, "$db": db})
 
         @classmethod
         def identifier(cls) -> str:

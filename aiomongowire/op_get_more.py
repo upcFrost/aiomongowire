@@ -37,4 +37,9 @@ class OpGetMore(BaseOp):
                    cursor_id=cursor_id)
 
     def _as_bytes(self):
-        pass
+        data = io.BytesIO()
+        data.write(int.to_bytes(0, length=4, byteorder='little'))
+        data.write(bson.encode_cstring(self.full_collection_name))
+        data.write(int.to_bytes(self.number_to_return, length=4, byteorder='little', signed=False))
+        data.write(int.to_bytes(self.cursor_id, length=8, byteorder='little', signed=False))
+        return data.getvalue()

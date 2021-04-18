@@ -36,7 +36,8 @@ class OpKillCursors(BaseOp):
         return cls(header=header, number_of_cursor_ids=number_of_cursor_ids, cursor_ids=cursor_ids)
 
     def _as_bytes(self) -> bytes:
-        data = io.BytesIO(initial_bytes=int.to_bytes(0, length=4, byteorder='little'))
+        data = io.BytesIO()
+        data.write(int.to_bytes(0, length=4, byteorder='little'))
         data.write(self.number_of_cursor_ids.to_bytes(length=4, byteorder='little', signed=True))
         for cursor in self.cursor_ids:
             data.write(cursor.to_bytes(length=8, byteorder='little', signed=True))

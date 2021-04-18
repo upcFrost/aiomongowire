@@ -51,7 +51,8 @@ class OpUpdate(BaseOp):
         )
 
     def _as_bytes(self) -> bytes:
-        data = io.BytesIO(initial_bytes=int.to_bytes(0, length=4, byteorder='little'))
+        data = io.BytesIO()
+        data.write(int.to_bytes(0, length=4, byteorder='little'))
         data.write(bson.encode_cstring(self.full_collection_name))
         data.write(int.to_bytes(self.flags, length=4, byteorder='little', signed=False))
         data.write(bson.dumps(self.selector))
