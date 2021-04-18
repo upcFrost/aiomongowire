@@ -79,7 +79,7 @@ async def test_send_op_insert(request_id, protocol, db_name, collection_name):
 
 
 @pytest.mark.asyncio
-async def test_send_op_query(request_id, protocol, db_name, collection_name):
+async def test_send_op_query_no_such_db(request_id, protocol, db_name, collection_name):
     assert protocol.connected
     header = aiomongowire.message_header.MessageHeader(request_id=request_id, response_to=0)
     data = aiomongowire.op_query.OpQuery(header=header,
@@ -111,6 +111,25 @@ async def test_insert_and_query(request_id, protocol, db_name, collection_name):
     result: OpReply = await future
 
     assert result.documents[0]['a'] == object_id
+
+
+@pytest.mark.asyncio
+async def test_get_more_no_cursor(request_id, protocol, db_name, collection_name):
+    header = aiomongowire.message_header.MessageHeader(request_id=request_id, response_to=0)
+    object_id = uuid.uuid4().hex
+    data = aiomongowire.op_insert.OpInsert(header, 0, f"{db_name}.{collection_name}", [{'a': object_id}])
+    future: Future[BaseOp] = await protocol.send_data(data)
+    await future
+
+    header = aiomongowire.message_header.MessageHeader(request_id=request_id + 1, response_to=0)
+    data = aiomongowire.op_get_more.OpGetMore(
+        header=header, full_collection_name=f"{db_name}.{collection_name}",
+        number_to_return=1, cursor_id=123)
+    future: Future[OpReply] = await protocol.send_data(data)
+    result: OpReply = await future
+
+    assert isinstance(result, OpReply)
+    assert result.response_flags == OpReply.Flags.QUERY_FAILURE
 
 
 @pytest.mark.asyncio

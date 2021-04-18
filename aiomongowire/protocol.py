@@ -2,7 +2,7 @@ import asyncio
 import io
 import logging
 import traceback
-from asyncio import transports, Future, shield
+from asyncio import transports, Future
 from typing import Optional, Dict
 
 from aiomongowire.base_op import BaseOp
@@ -39,9 +39,12 @@ class MongoWireProtocol(asyncio.Protocol):
         """
         while self.connected:
             try:
-                data = await shield(asyncio.wait_for(self._msg_queue.get(), timeout=1))
+                data = await self._msg_queue.get()
             except asyncio.TimeoutError:
                 continue
+            except (asyncio.CancelledError, GeneratorExit):
+                self._logger.info("AioMongoWire exiting")
+                break
 
             try:
                 self._transport.write(bytes(data))
@@ -49,6 +52,9 @@ class MongoWireProtocol(asyncio.Protocol):
                 self._logger.error(traceback.format_exc())
 
     def data_received(self, data: bytes):
+        """
+        Decodes received data and tries to map it to the request future
+        """
         try:
             data = BaseOp.from_data(io.BytesIO(data))
         except Exception:
