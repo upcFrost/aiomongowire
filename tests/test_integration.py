@@ -6,6 +6,7 @@ from random import randint
 from time import sleep
 
 import pytest
+import pytest_docker_db.plugin
 
 import aiomongowire
 import aiomongowire.message_header
@@ -34,11 +35,16 @@ def collection_name() -> str:
     return uuid.uuid4().hex[:10]
 
 
-@pytest.mark.skipif(os.environ.get('GITHUB_ENV'))
-@pytest.fixture(scope='session')
-def mongo(docker_db):
-    # Mongo takes time to init
-    sleep(5)
+if os.environ.get('GITHUB_ENV'):
+    @pytest.fixture(scope='session')
+    def mongo():
+        # Mongo takes time to init
+        sleep(5)
+else:
+    @pytest.fixture(scope='session')
+    def mongo(docker_db):
+        # Mongo takes time to init
+        sleep(5)
 
 
 @pytest.fixture
