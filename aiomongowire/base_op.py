@@ -23,6 +23,9 @@ class BaseOp(abc.ABC, SupportsBytes):
     @classmethod
     @abc.abstractmethod
     def has_reply(cls) -> bool:
+        """
+        True if operation is expected to return something
+        """
         pass
 
     @classmethod

@@ -45,7 +45,7 @@ class MongoWireProtocol(asyncio.Protocol):
 
             try:
                 self._transport.write(bytes(data))
-            except ValueError:
+            except:
                 self._logger.error(traceback.format_exc())
 
     def data_received(self, data: bytes):

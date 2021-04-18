@@ -111,3 +111,41 @@ async def test_insert_and_query(request_id, protocol, db_name, collection_name):
     result: OpReply = await future
 
     assert result.documents[0]['a'] == object_id
+
+
+@pytest.mark.asyncio
+async def test_insert_and_query_has_more(request_id, protocol, db_name, collection_name):
+    assert protocol.connected
+    header = aiomongowire.message_header.MessageHeader(request_id=request_id, response_to=0)
+
+    record_num = 20
+    to_return_num = 10
+
+    for i in range(record_num):
+        object_id = uuid.uuid4().hex
+        data = aiomongowire.op_insert.OpInsert(header, 0, f"{db_name}.{collection_name}", [{'a': object_id}])
+        future: Future[BaseOp] = await protocol.send_data(data)
+        await future
+
+    header = aiomongowire.message_header.MessageHeader(request_id=request_id + 1, response_to=0)
+    data = aiomongowire.op_query.OpQuery(header=header,
+                                         flags=0, full_collection_name=f"{db_name}.{collection_name}",
+                                         number_to_skip=0, number_to_return=to_return_num,
+                                         query={}, return_fields_selector=None)
+    future: Future[OpReply] = await protocol.send_data(data)
+    result: OpReply = await future
+
+    assert isinstance(result, OpReply)
+    assert len(result.documents) == to_return_num
+    assert result.cursor_id
+
+    header = aiomongowire.message_header.MessageHeader(request_id=request_id + 1, response_to=0)
+    data = aiomongowire.op_get_more.OpGetMore(
+        header=header, full_collection_name=f"{db_name}.{collection_name}",
+        number_to_return=to_return_num, cursor_id=result.cursor_id)
+    future: Future[OpReply] = await protocol.send_data(data)
+    result: OpReply = await future
+
+    assert isinstance(result, OpReply)
+    assert len(result.documents) == to_return_num
+    assert result.cursor_id
