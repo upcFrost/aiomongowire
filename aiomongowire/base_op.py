@@ -1,6 +1,6 @@
 import abc
 import io
-from typing import SupportsBytes, Dict, Type
+from typing import Dict, Type
 
 from aiomongowire.message_header import MessageHeader
 from aiomongowire.op_code import OpCode
@@ -8,7 +8,7 @@ from aiomongowire.op_code import OpCode
 _OP_CLASSES_BY_CODE: Dict[OpCode, Type['BaseOp']] = {}
 
 
-class BaseOp(abc.ABC, SupportsBytes):
+class BaseOp(abc.ABC):
     """
     Generic operation. Children should define __bytes__ method
     """

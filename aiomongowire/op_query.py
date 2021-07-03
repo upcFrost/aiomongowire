@@ -70,12 +70,12 @@ class OpQuery(BaseOp):
                    query=query, return_fields_selector=return_fields_selector)
 
     def _as_bytes(self) -> bytes:
-        data = io.BytesIO()
-        data.write(int.to_bytes(self.flags, length=4, byteorder='little', signed=False))
-        data.write(bson.encode_cstring(self.full_collection_name))
-        data.write(int.to_bytes(self.number_to_skip, length=4, byteorder='little', signed=True))
-        data.write(int.to_bytes(self.number_to_return, length=4, byteorder='little', signed=True))
-        data.write(bson.dumps(self.query))
-        if self.return_fields_selector:
-            data.write(bson.dumps(self.return_fields_selector))
-        return data.getvalue()
+        with io.BytesIO() as data:
+            data.write(int.to_bytes(self.flags, length=4, byteorder='little', signed=False))
+            data.write(bson.encode_cstring(self.full_collection_name))
+            data.write(int.to_bytes(self.number_to_skip, length=4, byteorder='little', signed=True))
+            data.write(int.to_bytes(self.number_to_return, length=4, byteorder='little', signed=True))
+            data.write(bson.dumps(self.query))
+            if self.return_fields_selector:
+                data.write(bson.dumps(self.return_fields_selector))
+            return data.getvalue()

@@ -6,7 +6,6 @@ from random import randint
 from time import sleep
 
 import pytest
-import pytest_docker_db.plugin
 
 import aiomongowire
 import aiomongowire.message_header

@@ -37,4 +37,4 @@ class OpDelete(BaseOp):
         return cls(header=header, full_collection_name=full_collection_name, flags=flags, selector=selector)
 
     def _as_bytes(self) -> bytes:
-        pass
+        raise NotImplementedError()

@@ -1,4 +1,5 @@
 import io
+import random
 from typing import SupportsBytes
 
 
@@ -12,9 +13,12 @@ class MessageHeader(SupportsBytes):
     """
     __slots__ = ['request_id', 'response_to']
 
-    def __init__(self, request_id: int, response_to: int):
-        self.request_id = request_id
-        self.response_to = response_to
+    def __init__(self, request_id: int = None, response_to: int = None):
+        self.response_to = response_to or 0
+        if request_id is not None:
+            self.request_id = request_id
+        else:
+            self.request_id = random.randint(0, 1 << 32)
 
     @classmethod
     def from_data(cls, data: io.BytesIO) -> 'MessageHeader':

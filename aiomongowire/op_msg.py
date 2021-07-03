@@ -109,11 +109,11 @@ class OpMsg(BaseOp):
             self.documents = documents or []
 
         def __bytes__(self):
-            result = io.BytesIO()
-            result.write(bson.encode_cstring(self.identifier))
-            for doc in self.documents:
-                result.write(bson.dumps(doc))
-            data = result.getvalue()
+            with io.BytesIO() as data:
+                data.write(bson.encode_cstring(self.identifier))
+                for doc in self.documents:
+                    data.write(bson.dumps(doc))
+            data = data.getvalue()
             self.size = len(data) + 4
 
             payload_type = int.to_bytes(self.payload_type, length=1, byteorder='little')
@@ -153,13 +153,13 @@ class OpMsg(BaseOp):
         return cls(header, flag_bits, sections=list(sections.values()), checksum=checksum)
 
     def _as_bytes(self) -> bytes:
-        result = io.BytesIO()
-        result.write(self.flag_bits.to_bytes(length=4, byteorder='little', signed=False))
-        for section in self.sections:
-            result.write(bytes(section))
-        if self.checksum:
-            result.write(self.checksum.to_bytes(length=4, byteorder='little', signed=False))
-        return result.getvalue()
+        with io.BytesIO() as data:
+            data.write(self.flag_bits.to_bytes(length=4, byteorder='little', signed=False))
+            for section in self.sections:
+                data.write(bytes(section))
+            if self.checksum:
+                data.write(self.checksum.to_bytes(length=4, byteorder='little', signed=False))
+            return data.getvalue()
 
     def __str__(self):
         return f"{[str(s) for s in self.sections]}"
