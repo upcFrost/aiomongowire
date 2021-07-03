@@ -1,6 +1,6 @@
 import abc
 import io
-from enum import IntEnum
+from enum import IntEnum, IntFlag
 from typing import SupportsBytes, List
 
 import bson
@@ -23,7 +23,7 @@ class OpMsg(BaseOp):
         BODY = 0
         DOCUMENTS = 1
 
-    class Section(abc.ABC, SupportsBytes):
+    class Section(abc.ABC):
         """
         Generic section
         """
@@ -122,6 +122,11 @@ class OpMsg(BaseOp):
 
         def __str__(self):
             return f"Identifier: {self.identifier}, Data: {str(self.documents)}"
+
+    class Flags(IntFlag):
+        CHECKSUM_PRESENT = 1 << 0  # The message ends with 4 bytes containing a CRC-32C checksum
+        MORE_TO_COME = 1 << 1  # Another message will follow this one without further action from the receiver
+        EXHAUST_ALLOWED = 1 << 16  # The client is prepared for multiple replies to this request using the moreToCome
 
     def __init__(self, header: MessageHeader, flag_bits: int, sections: List[Section], checksum: int = None):
         super().__init__(header)

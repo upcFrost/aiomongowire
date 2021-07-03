@@ -16,8 +16,8 @@ class OpUpdate(BaseOp):
 
     class Flags(IntEnum):
         """Update operation flag bit positions"""
-        UPSERT = 0
-        MULTI_UPDATE = 1
+        UPSERT = 1 << 0
+        MULTI_UPDATE = 1 << 1
 
     @classmethod
     def op_code(cls) -> OpCode:

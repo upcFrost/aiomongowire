@@ -19,13 +19,13 @@ class OpQuery(BaseOp):
                  'return_fields_selector']
 
     class Flags(IntFlag):
-        TAILABLE_CURSOR = 1 << 1
-        SLAVE_OK = 1 << 2
+        TAILABLE_CURSOR = 1 << 1  # Cursor is not closed when the last data is retrieved
+        SLAVE_OK = 1 << 2  # Allow query of replica slave
         OPLOG_REPLAY = 1 << 3
         NO_CURSOR_TIMEOUT = 1 << 4
-        AWAIT_DATA = 1 << 5
-        EXHAUST = 1 << 6
-        PARTIAL = 1 << 7
+        AWAIT_DATA = 1 << 5  # Use with TailableCursor. If at the end of the data, block rather than returning no data
+        EXHAUST = 1 << 6  # Stream the data down full blast in multiple "more" packages
+        PARTIAL = 1 << 7  # Get partial results from a mongos if some shards are down
 
     @classmethod
     def op_code(cls) -> OpCode:

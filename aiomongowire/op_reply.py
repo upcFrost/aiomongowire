@@ -26,10 +26,10 @@ class OpReply(BaseOp):
         return False
 
     class Flags(IntFlag):
-        CURSOR_NOT_FOUND = 0
-        QUERY_FAILURE = 1 << 0
-        SHARD_CONFIG_STATE = 1 << 1
-        AWAIT_CAPABLE = 1 << 2
+        CURSOR_NOT_FOUND = 0 << 1
+        QUERY_FAILURE = 1 << 1
+        SHARD_CONFIG_STATE = 1 << 2
+        AWAIT_CAPABLE = 1 << 3
 
     def __init__(self, header: MessageHeader, response_flags: int, cursor_id: int, starting_from: int,
                  number_returned: int, documents: List[dict]):
