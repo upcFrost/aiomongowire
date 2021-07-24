@@ -48,7 +48,7 @@ else:
 
 @pytest.fixture
 async def protocol(mongo) -> aiomongowire.MongoWireProtocol:
-    loop = asyncio.get_running_loop()
+    loop = asyncio.get_event_loop()
     transport, protocol = await loop.create_connection(lambda: aiomongowire.protocol.MongoWireProtocol(),
                                                        '127.0.0.1', 27017)
     yield protocol
@@ -134,7 +134,7 @@ async def test_get_more_no_cursor(request_id, protocol, db_name, collection_name
     result: OpReply = await future
 
     assert isinstance(result, OpReply)
-    assert result.response_flags == OpReply.Flags.QUERY_FAILURE
+    assert result.response_flags == OpReply.Flags.CURSOR_NOT_FOUND
 
 
 @pytest.mark.asyncio

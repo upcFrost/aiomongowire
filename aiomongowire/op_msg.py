@@ -113,12 +113,12 @@ class OpMsg(BaseOp):
                 data.write(bson.encode_cstring(self.identifier))
                 for doc in self.documents:
                     data.write(bson.dumps(doc))
-            data = data.getvalue()
-            self.size = len(data) + 4
+                data = data.getvalue()
+                self.size = len(data) + 4
 
-            payload_type = int.to_bytes(self.payload_type, length=1, byteorder='little')
-            size = self.size.to_bytes(length=4, byteorder='little', signed=True)
-            return payload_type + size + data
+                payload_type = int.to_bytes(self.payload_type, length=1, byteorder='little')
+                size = self.size.to_bytes(length=4, byteorder='little', signed=True)
+                return payload_type + size + data
 
         def __str__(self):
             return f"Identifier: {self.identifier}, Data: {str(self.documents)}"
