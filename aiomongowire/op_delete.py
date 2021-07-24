@@ -1,4 +1,5 @@
 import io
+from enum import IntFlag
 
 import bson
 
@@ -13,6 +14,9 @@ class OpDelete(BaseOp):
     OP_DELETE is used to remove one or more documents from a collection.
     """
     __slots__ = ['header', 'full_collection_name', 'flags', 'selector']
+
+    class Flags(IntFlag):
+        SINGLE_REMOVE = 1 << 0  # Remove only the first matching document in the collection
 
     def __init__(self, header: MessageHeader, full_collection_name: str, flags: int, selector: dict):
         super(OpDelete, self).__init__(header)
@@ -37,4 +41,4 @@ class OpDelete(BaseOp):
         return cls(header=header, full_collection_name=full_collection_name, flags=flags, selector=selector)
 
     def _as_bytes(self) -> bytes:
-        pass
+        raise NotImplementedError()

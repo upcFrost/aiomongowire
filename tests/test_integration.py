@@ -34,16 +34,21 @@ def collection_name() -> str:
     return uuid.uuid4().hex[:10]
 
 
-@pytest.mark.skipif(os.environ.get('GITHUB_ENV'))
-@pytest.fixture(scope='session')
-def mongo(docker_db):
-    # Mongo takes time to init
-    sleep(5)
+if os.environ.get('GITHUB_ENV'):
+    @pytest.fixture(scope='session')
+    def mongo():
+        # Mongo takes time to init
+        sleep(5)
+else:
+    @pytest.fixture(scope='session')
+    def mongo(docker_db):
+        # Mongo takes time to init
+        sleep(5)
 
 
 @pytest.fixture
 async def protocol(mongo) -> aiomongowire.MongoWireProtocol:
-    loop = asyncio.get_running_loop()
+    loop = asyncio.get_event_loop()
     transport, protocol = await loop.create_connection(lambda: aiomongowire.protocol.MongoWireProtocol(),
                                                        '127.0.0.1', 27017)
     yield protocol
@@ -129,7 +134,7 @@ async def test_get_more_no_cursor(request_id, protocol, db_name, collection_name
     result: OpReply = await future
 
     assert isinstance(result, OpReply)
-    assert result.response_flags == OpReply.Flags.QUERY_FAILURE
+    assert result.response_flags == OpReply.Flags.CURSOR_NOT_FOUND
 
 
 @pytest.mark.asyncio

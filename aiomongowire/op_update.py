@@ -16,8 +16,8 @@ class OpUpdate(BaseOp):
 
     class Flags(IntEnum):
         """Update operation flag bit positions"""
-        UPSERT = 0
-        MULTI_UPDATE = 1
+        UPSERT = 1 << 0
+        MULTI_UPDATE = 1 << 1
 
     @classmethod
     def op_code(cls) -> OpCode:
@@ -51,10 +51,10 @@ class OpUpdate(BaseOp):
         )
 
     def _as_bytes(self) -> bytes:
-        data = io.BytesIO()
-        data.write(int.to_bytes(0, length=4, byteorder='little'))
-        data.write(bson.encode_cstring(self.full_collection_name))
-        data.write(int.to_bytes(self.flags, length=4, byteorder='little', signed=False))
-        data.write(bson.dumps(self.selector))
-        data.write(bson.dumps(self.update))
-        return data.getvalue()
+        with io.BytesIO() as data:
+            data.write(int.to_bytes(0, length=4, byteorder='little'))
+            data.write(bson.encode_cstring(self.full_collection_name))
+            data.write(int.to_bytes(self.flags, length=4, byteorder='little', signed=False))
+            data.write(bson.dumps(self.selector))
+            data.write(bson.dumps(self.update))
+            return data.getvalue()

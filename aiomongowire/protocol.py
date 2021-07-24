@@ -13,7 +13,7 @@ class MongoWireProtocol(asyncio.Protocol):
         self.connected: bool = False
 
         self._transport: Optional[asyncio.Transport] = None
-        self._msg_queue: asyncio.Queue[BaseOp] = asyncio.Queue()
+        self._msg_queue: asyncio.Queue[Optional[BaseOp]] = asyncio.Queue()
         self._out_data: Dict[int, Future[BaseOp]] = dict()
         self._logger = logging.getLogger('aiomongowire')
 
@@ -40,31 +40,37 @@ class MongoWireProtocol(asyncio.Protocol):
         while self.connected:
             try:
                 data = await self._msg_queue.get()
-            except asyncio.TimeoutError:
-                continue
-            except (asyncio.CancelledError, GeneratorExit):
+            except asyncio.CancelledError:
                 self._logger.info("AioMongoWire exiting")
                 break
 
+            if not data:
+                # Data might be None when exiting
+                continue
+
             try:
                 self._transport.write(bytes(data))
-            except:
+            except Exception as exc:
                 self._logger.error(traceback.format_exc())
+                self._out_data[data.header.request_id].set_exception(exc)
+            finally:
+                self._msg_queue.task_done()
 
     def data_received(self, data: bytes):
         """
         Decodes received data and tries to map it to the request future
         """
         try:
-            data = BaseOp.from_data(io.BytesIO(data))
+            with io.BytesIO(data) as recv:
+                msg = BaseOp.from_data(recv)
         except Exception:
             self._logger.error(traceback.format_exc())
             return
 
         try:
-            self._out_data[data.header.response_to].set_result(data)
+            self._out_data[msg.header.response_to].set_result(msg)
         except KeyError:
-            self._logger.error(f"Unexpected response to non-existent request {data.header.response_to}")
+            self._logger.error(f"Unexpected response to non-existent request {msg.header.response_to}")
 
     def eof_received(self) -> Optional[bool]:
         return super().eof_received()
@@ -76,5 +82,8 @@ class MongoWireProtocol(asyncio.Protocol):
 
     def connection_lost(self, exc: Optional[Exception]) -> None:
         self.connected = False
+        loop = asyncio.get_event_loop()
+        loop.run_until_complete(self._msg_queue.put(None))
+        loop.run_until_complete(self._msg_queue.join())
         if exc:
             raise exc

@@ -18,7 +18,7 @@ class OpInsert(BaseOp):
     __slots__ = ['header', 'flags', 'full_collection_name', 'documents']
 
     class Flags(IntFlag):
-        CONTINUE_ON_ERROR = 0
+        CONTINUE_ON_ERROR = 1 << 0
 
     def __init__(self, header: MessageHeader, flags: int, full_collection_name: str, documents: list):
         super().__init__(header)
@@ -42,9 +42,9 @@ class OpInsert(BaseOp):
         return cls(header, flags, full_collection_name, documents)
 
     def _as_bytes(self) -> bytes:
-        result = io.BytesIO()
-        result.write(self.flags.to_bytes(length=4, byteorder='little', signed=True))
-        result.write(bson.encode_cstring(self.full_collection_name))
-        for doc in self.documents:
-            result.write(bson.dumps(doc))
-        return result.getvalue()
+        with io.BytesIO() as data:
+            data.write(self.flags.to_bytes(length=4, byteorder='little', signed=True))
+            data.write(bson.encode_cstring(self.full_collection_name))
+            for doc in self.documents:
+                data.write(bson.dumps(doc))
+            return data.getvalue()
