@@ -26,7 +26,7 @@ class OpReply(BaseOp):
         return False
 
     class Flags(IntFlag):
-        CURSOR_NOT_FOUND = 0 << 1
+        CURSOR_NOT_FOUND = 1 << 0
         QUERY_FAILURE = 1 << 1
         SHARD_CONFIG_STATE = 1 << 2
         AWAIT_CAPABLE = 1 << 3
