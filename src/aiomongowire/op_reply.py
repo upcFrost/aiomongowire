@@ -33,7 +33,7 @@ class OpReply(BaseOp):
 
     def __init__(self, cursor_id: int, starting_from: int, number_returned: int, documents: List[dict],
                  header: Optional[MessageHeader], response_flags: int = 0):
-        super(OpReply, self).__init__(header)
+        super().__init__(header)
         self.response_flags = response_flags
         self.cursor_id = cursor_id
         self.starting_from = starting_from

@@ -13,8 +13,8 @@ class MessageHeader(SupportsBytes):
     """
     __slots__ = ['request_id', 'response_to']
 
-    def __init__(self, request_id: int = None, response_to: int = None):
-        self.response_to = response_to or 0
+    def __init__(self, request_id: int = None, response_to: int = 0):
+        self.response_to = response_to
         if request_id is not None:
             self.request_id = request_id
         else:

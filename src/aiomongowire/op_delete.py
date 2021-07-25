@@ -21,7 +21,7 @@ class OpDelete(BaseOp):
 
     def __init__(self, full_collection_name: str, selector: dict, header: Optional[MessageHeader] = None,
                  flags: int = 0):
-        super(OpDelete, self).__init__(header)
+        super().__init__(header)
         self.full_collection_name = full_collection_name
         self.flags = flags
         self.selector = selector

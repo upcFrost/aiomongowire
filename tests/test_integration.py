@@ -6,9 +6,9 @@ from time import sleep
 
 import pytest
 
-import aiomongowire
-from aiomongowire.base_op import BaseOp
-from aiomongowire.op_code import OpCode
+import src.aiomongowire as aiomongowire
+from src.aiomongowire.base_op import BaseOp
+from src.aiomongowire.op_code import OpCode
 
 
 @pytest.fixture
