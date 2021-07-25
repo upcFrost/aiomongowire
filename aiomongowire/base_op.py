@@ -1,9 +1,9 @@
 import abc
 import io
-from typing import Dict, Type
+from typing import Dict, Type, Optional
 
-from aiomongowire.message_header import MessageHeader
-from aiomongowire.op_code import OpCode
+from .message_header import MessageHeader
+from .op_code import OpCode
 
 _OP_CLASSES_BY_CODE: Dict[OpCode, Type['BaseOp']] = {}
 
@@ -48,8 +48,11 @@ class BaseOp(abc.ABC):
         """
         pass
 
-    def __init__(self, header: MessageHeader):
-        self.header = header
+    def __init__(self, header: Optional[MessageHeader] = None):
+        if header:
+            self.header = header
+        else:
+            self.header = MessageHeader()
 
     def __init_subclass__(cls, **kwargs):
         _OP_CLASSES_BY_CODE[cls.op_code()] = cls

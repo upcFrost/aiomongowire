@@ -1,9 +1,9 @@
 import io
-from typing import List
+from typing import List, Optional
 
-from aiomongowire.base_op import BaseOp
-from aiomongowire.message_header import MessageHeader
-from aiomongowire.op_code import OpCode
+from .base_op import BaseOp
+from .message_header import MessageHeader
+from .op_code import OpCode
 
 
 class OpKillCursors(BaseOp):
@@ -20,7 +20,7 @@ class OpKillCursors(BaseOp):
     def has_reply(cls) -> bool:
         return False
 
-    def __init__(self, header: MessageHeader, number_of_cursor_ids: int, cursor_ids: List[int]):
+    def __init__(self, number_of_cursor_ids: int, cursor_ids: List[int], header: Optional[MessageHeader] = None):
         super().__init__(header)
         self.number_of_cursor_ids = number_of_cursor_ids
         self.cursor_ids = cursor_ids

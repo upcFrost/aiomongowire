@@ -1,13 +1,12 @@
-import abc
 import io
 from enum import IntEnum, IntFlag
-from typing import SupportsBytes, List
+from typing import SupportsBytes, List, Optional
 
 import bson
 
-from aiomongowire.base_op import BaseOp
-from aiomongowire.message_header import MessageHeader
-from aiomongowire.op_code import OpCode
+from .base_op import BaseOp
+from .message_header import MessageHeader
+from .op_code import OpCode
 
 
 class OpMsg(BaseOp):
@@ -23,13 +22,16 @@ class OpMsg(BaseOp):
         BODY = 0
         DOCUMENTS = 1
 
-    class Section(abc.ABC):
+    class Section(SupportsBytes):
         """
         Generic section
         """
 
         def __init__(self, payload_type: 'OpMsg.PayloadType'):
             self.payload_type = payload_type
+
+        def __bytes__(self):
+            raise NotImplementedError()
 
     class Body(Section):
         """
@@ -128,7 +130,8 @@ class OpMsg(BaseOp):
         MORE_TO_COME = 1 << 1  # Another message will follow this one without further action from the receiver
         EXHAUST_ALLOWED = 1 << 16  # The client is prepared for multiple replies to this request using the moreToCome
 
-    def __init__(self, header: MessageHeader, flag_bits: int, sections: List[Section], checksum: int = None):
+    def __init__(self, sections: List[Section], checksum: int = None, header: Optional[MessageHeader] = None,
+                 flag_bits: int = 0):
         super().__init__(header)
         self.flag_bits = flag_bits
         self.sections = sections
@@ -155,7 +158,7 @@ class OpMsg(BaseOp):
         else:
             raise ValueError(f"Unknown section type for OpMsg: {next_section}")
         checksum = int.from_bytes(data.read(4), byteorder='little', signed=False)  # optional CRC-32C checksum
-        return cls(header, flag_bits, sections=list(sections.values()), checksum=checksum)
+        return cls(header=header, flag_bits=flag_bits, sections=list(sections.values()), checksum=checksum)
 
     def _as_bytes(self) -> bytes:
         with io.BytesIO() as data:

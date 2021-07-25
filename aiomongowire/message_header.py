@@ -18,7 +18,7 @@ class MessageHeader(SupportsBytes):
         if request_id is not None:
             self.request_id = request_id
         else:
-            self.request_id = random.randint(0, 1 << 32)
+            self.request_id = random.randint(0, 1 << 31)
 
     @classmethod
     def from_data(cls, data: io.BytesIO) -> 'MessageHeader':

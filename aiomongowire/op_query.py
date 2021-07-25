@@ -4,10 +4,10 @@ from typing import Optional
 
 import bson
 
-from aiomongowire.base_op import BaseOp
-from aiomongowire.message_header import MessageHeader
-from aiomongowire.op_code import OpCode
-from aiomongowire.utils import decode_cstring
+from .base_op import BaseOp
+from .message_header import MessageHeader
+from .op_code import OpCode
+from .utils import decode_cstring
 
 
 class OpQuery(BaseOp):
@@ -35,8 +35,8 @@ class OpQuery(BaseOp):
     def has_reply(cls) -> bool:
         return True
 
-    def __init__(self, header: MessageHeader, flags: int, full_collection_name: str,
-                 number_to_skip: int, number_to_return: int, query: dict, return_fields_selector: Optional[dict]):
+    def __init__(self, full_collection_name: str, query: dict, number_to_skip: int = 0, number_to_return: int = 0,
+                 return_fields_selector: Optional[dict] = None, header: Optional[MessageHeader] = None, flags: int = 0):
         super().__init__(header)
         self.flags = flags
         self.full_collection_name = full_collection_name

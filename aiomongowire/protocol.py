@@ -5,7 +5,7 @@ import traceback
 from asyncio import transports, Future
 from typing import Optional, Dict
 
-from aiomongowire.base_op import BaseOp
+from .base_op import BaseOp
 
 
 class MongoWireProtocol(asyncio.Protocol):

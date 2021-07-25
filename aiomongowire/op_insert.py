@@ -1,12 +1,13 @@
 import io
 from enum import IntFlag
+from typing import Optional
 
 import bson
 
-from aiomongowire.base_op import BaseOp
-from aiomongowire.message_header import MessageHeader
-from aiomongowire.op_code import OpCode
-from aiomongowire.utils import decode_cstring
+from .base_op import BaseOp
+from .message_header import MessageHeader
+from .op_code import OpCode
+from .utils import decode_cstring
 
 
 class OpInsert(BaseOp):
@@ -20,7 +21,8 @@ class OpInsert(BaseOp):
     class Flags(IntFlag):
         CONTINUE_ON_ERROR = 1 << 0
 
-    def __init__(self, header: MessageHeader, flags: int, full_collection_name: str, documents: list):
+    def __init__(self, full_collection_name: str, documents: list, header: Optional[MessageHeader] = None,
+                 flags: int = 0):
         super().__init__(header)
         self.flags = flags  # bit vector
         self.full_collection_name = full_collection_name  # "dbname.collectionname"
@@ -39,7 +41,7 @@ class OpInsert(BaseOp):
         flags = int.from_bytes(data.read(4), byteorder='little', signed=True)  # bit vector
         full_collection_name = decode_cstring(data)  # "dbname.collectionname"
         documents = bson.decode_object(data)  # one or more documents to insert into the collection
-        return cls(header, flags, full_collection_name, documents)
+        return cls(header=header, flags=flags, full_collection_name=full_collection_name, documents=documents)
 
     def _as_bytes(self) -> bytes:
         with io.BytesIO() as data:

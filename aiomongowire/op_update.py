@@ -1,12 +1,13 @@
 import io
 from enum import IntEnum
+from typing import Optional
 
 import bson
 
-from aiomongowire.base_op import BaseOp
-from aiomongowire.message_header import MessageHeader
-from aiomongowire.op_code import OpCode
-from aiomongowire.utils import decode_cstring
+from .base_op import BaseOp
+from .message_header import MessageHeader
+from .op_code import OpCode
+from .utils import decode_cstring
 
 
 class OpUpdate(BaseOp):
@@ -23,7 +24,8 @@ class OpUpdate(BaseOp):
     def op_code(cls) -> OpCode:
         return OpCode.OP_UPDATE
 
-    def __init__(self, header: MessageHeader, full_collection_name: str, flags: int, selector: dict, update: dict):
+    def __init__(self, full_collection_name: str, selector: dict, update: dict,
+                 header: Optional[MessageHeader] = None, flags: int = 0):
         super().__init__(header)
         self.full_collection_name = full_collection_name
         self.flags = flags

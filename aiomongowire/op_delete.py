@@ -1,12 +1,13 @@
 import io
 from enum import IntFlag
+from typing import Optional
 
 import bson
 
-from aiomongowire.base_op import BaseOp
-from aiomongowire.message_header import MessageHeader
-from aiomongowire.op_code import OpCode
-from aiomongowire.utils import decode_cstring
+from .base_op import BaseOp
+from .message_header import MessageHeader
+from .op_code import OpCode
+from .utils import decode_cstring
 
 
 class OpDelete(BaseOp):
@@ -18,7 +19,8 @@ class OpDelete(BaseOp):
     class Flags(IntFlag):
         SINGLE_REMOVE = 1 << 0  # Remove only the first matching document in the collection
 
-    def __init__(self, header: MessageHeader, full_collection_name: str, flags: int, selector: dict):
+    def __init__(self, full_collection_name: str, selector: dict, header: Optional[MessageHeader] = None,
+                 flags: int = 0):
         super(OpDelete, self).__init__(header)
         self.full_collection_name = full_collection_name
         self.flags = flags

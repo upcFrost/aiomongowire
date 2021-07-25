@@ -1,12 +1,12 @@
 import io
 from enum import IntFlag
-from typing import List
+from typing import List, Optional
 
 import bson
 
-from aiomongowire.base_op import BaseOp
-from aiomongowire.message_header import MessageHeader
-from aiomongowire.op_code import OpCode
+from .base_op import BaseOp
+from .message_header import MessageHeader
+from .op_code import OpCode
 
 
 class OpReply(BaseOp):
@@ -31,8 +31,8 @@ class OpReply(BaseOp):
         SHARD_CONFIG_STATE = 1 << 2
         AWAIT_CAPABLE = 1 << 3
 
-    def __init__(self, header: MessageHeader, response_flags: int, cursor_id: int, starting_from: int,
-                 number_returned: int, documents: List[dict]):
+    def __init__(self, cursor_id: int, starting_from: int, number_returned: int, documents: List[dict],
+                 header: Optional[MessageHeader], response_flags: int = 0):
         super(OpReply, self).__init__(header)
         self.response_flags = response_flags
         self.cursor_id = cursor_id
