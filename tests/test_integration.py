@@ -48,6 +48,17 @@ async def test_connect(protocol):
 
 
 @pytest.mark.asyncio
+async def test_is_master(protocol):
+    assert protocol.connected
+    data = aiomongowire.OpQuery(full_collection_name='admin.$cmd', query={'isMaster': 1}, number_to_return=1)
+    future: Future[BaseOp] = await protocol.send_data(data)
+    result = await future
+    assert isinstance(result, aiomongowire.OpReply)
+    assert len(result.documents) == 1
+    assert result.documents[0]['ok'] == 1
+
+
+@pytest.mark.asyncio
 async def test_send_op_msg_insert(protocol, db_name, collection_name):
     assert protocol.connected
     header = aiomongowire.message_header.MessageHeader()
@@ -95,6 +106,30 @@ async def test_insert_and_query(protocol, db_name, collection_name):
     result: aiomongowire.OpReply = await future
 
     assert result.documents[0]['a'] == object_id
+
+
+@pytest.mark.asyncio
+async def test_insert_update_and_query(protocol, db_name, collection_name):
+    assert protocol.connected
+    object_id = uuid.uuid4().hex
+
+    data = aiomongowire.OpInsert(f"{db_name}.{collection_name}", [{'a': object_id}])
+    future: Future[BaseOp] = await protocol.send_data(data)
+    await future
+
+    new_object_id = uuid.uuid4().hex
+    data = aiomongowire.OpUpdate(full_collection_name=f"{db_name}.{collection_name}",
+                                 selector={'a': object_id},
+                                 update={'$set': {'a': new_object_id}})
+    future: Future[BaseOp] = await protocol.send_data(data)
+    await future
+
+    data = aiomongowire.OpQuery(full_collection_name=f"{db_name}.{collection_name}",
+                                query={'a': new_object_id}, return_fields_selector=None)
+    future: Future[aiomongowire.OpReply] = await protocol.send_data(data)
+    result: aiomongowire.OpReply = await future
+
+    assert result.documents[0]['a'] == new_object_id
 
 
 @pytest.mark.asyncio
