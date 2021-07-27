@@ -9,6 +9,12 @@ from .base_op import BaseOp
 
 
 class MongoWireProtocol(asyncio.Protocol):
+    """
+    MongoDB Wire Protocol implementation
+
+    See https://docs.mongodb.com/manual/reference/mongodb-wire-protocol
+    """
+
     def __init__(self):
         self.connected: bool = False
 

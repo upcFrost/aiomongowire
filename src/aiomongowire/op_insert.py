@@ -19,6 +19,7 @@ class OpInsert(BaseOp):
     __slots__ = ['header', 'flags', 'full_collection_name', 'documents']
 
     class Flags(IntFlag):
+        """OP_INSERT flag bits"""
         CONTINUE_ON_ERROR = 1 << 0
 
     def __init__(self, full_collection_name: str, documents: list, header: Optional[MessageHeader] = None,

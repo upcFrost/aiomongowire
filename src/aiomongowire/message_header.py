@@ -22,6 +22,9 @@ class MessageHeader(SupportsBytes):
 
     @classmethod
     def from_data(cls, data: io.BytesIO) -> 'MessageHeader':
+        """
+        Constructs new message header instance from BytesIO
+        """
         request_id = int.from_bytes(data.read(4), byteorder='little', signed=True)
         response_to = int.from_bytes(data.read(4), byteorder='little', signed=True)
         return cls(request_id=request_id, response_to=response_to)

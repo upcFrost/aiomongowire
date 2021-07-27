@@ -17,6 +17,7 @@ class OpDelete(BaseOp):
     __slots__ = ['header', 'full_collection_name', 'flags', 'selector']
 
     class Flags(IntFlag):
+        """OP_DELETE flag bits"""
         SINGLE_REMOVE = 1 << 0  # Remove only the first matching document in the collection
 
     def __init__(self, full_collection_name: str, selector: dict, header: Optional[MessageHeader] = None,

@@ -19,6 +19,7 @@ class OpQuery(BaseOp):
                  'return_fields_selector']
 
     class Flags(IntFlag):
+        """OP_QUERY flag bits"""
         TAILABLE_CURSOR = 1 << 1  # Cursor is not closed when the last data is retrieved
         SLAVE_OK = 1 << 2  # Allow query of replica slave
         OPLOG_REPLAY = 1 << 3
