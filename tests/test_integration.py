@@ -133,6 +133,28 @@ async def test_insert_update_and_query(protocol, db_name, collection_name):
 
 
 @pytest.mark.asyncio
+async def test_insert_delete_and_query(protocol, db_name, collection_name):
+    assert protocol.connected
+    object_id = uuid.uuid4().hex
+
+    data = aiomongowire.OpInsert(f"{db_name}.{collection_name}", [{'a': object_id}])
+    future: Future[BaseOp] = await protocol.send_data(data)
+    await future
+
+    data = aiomongowire.OpDelete(full_collection_name=f"{db_name}.{collection_name}",
+                                 selector={'a': object_id})
+    future: Future[BaseOp] = await protocol.send_data(data)
+    await future
+
+    data = aiomongowire.OpQuery(full_collection_name=f"{db_name}.{collection_name}",
+                                query={'a': object_id}, return_fields_selector=None)
+    future: Future[aiomongowire.OpReply] = await protocol.send_data(data)
+    result: aiomongowire.OpReply = await future
+
+    assert not result.documents
+
+
+@pytest.mark.asyncio
 async def test_get_more_no_cursor(protocol, db_name, collection_name):
     object_id = uuid.uuid4().hex
     data = aiomongowire.OpInsert(f"{db_name}.{collection_name}", [{'a': object_id}])

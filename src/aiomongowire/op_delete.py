@@ -43,4 +43,9 @@ class OpDelete(BaseOp):
         return cls(header=header, full_collection_name=full_collection_name, flags=flags, selector=selector)
 
     def _as_bytes(self) -> bytes:
-        raise NotImplementedError()
+        with io.BytesIO() as data:
+            data.write(int.to_bytes(0, length=4, byteorder='little'))
+            data.write(bson.encode_cstring(self.full_collection_name))
+            data.write(int.to_bytes(self.flags, length=4, byteorder='little', signed=False))
+            data.write(bson.dumps(self.selector))
+            return data.getvalue()
