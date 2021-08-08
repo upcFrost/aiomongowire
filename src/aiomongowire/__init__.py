@@ -1,4 +1,5 @@
 from .message_header import MessageHeader
+from .op_compressed import OpCompressed
 from .op_delete import OpDelete
 from .op_get_more import OpGetMore
 from .op_insert import OpInsert
@@ -10,4 +11,4 @@ from .op_update import OpUpdate
 from .protocol import MongoWireProtocol
 
 __all__ = ["OpMsg", "OpUpdate", "OpReply", "OpQuery", "OpKillCursors", "OpGetMore", "OpInsert", "OpDelete",
-           "MessageHeader", "MongoWireProtocol"]
+           "OpCompressed", "MessageHeader", "MongoWireProtocol"]

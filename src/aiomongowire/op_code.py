@@ -14,6 +14,7 @@ class OpCode(IntEnum):
     OP_GET_MORE = 2005  # Get more data from a query. See Cursors.
     OP_DELETE = 2006  # Delete documents.
     OP_KILL_CURSORS = 2007  # Notify database that the client has finished with the cursor.
+    OP_COMPRESSED = 2012  # Wrapper for sending compressed data
     OP_MSG = 2013  # Send a message using the format introduced in MongoDB 3.6
 
     def __bytes__(self):
