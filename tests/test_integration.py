@@ -202,11 +202,15 @@ async def test_insert_and_query_has_more(protocol, db_name, collection_name):
     assert result.cursor_id
 
 
+@pytest.mark.parametrize('compressor', [
+    aiomongowire.OpCompressed.Compressor.SNAPPY,
+    aiomongowire.OpCompressed.Compressor.ZLIB,
+    aiomongowire.OpCompressed.Compressor.ZSTD
+])
 @pytest.mark.asyncio
-async def test_compressed(protocol, db_name, collection_name):
+async def test_compressed(protocol, db_name, collection_name, compressor):
     query = aiomongowire.OpQuery(full_collection_name=f"{db_name}.{collection_name}", query={})
-    compressed = aiomongowire.OpCompressed(compressor=aiomongowire.OpCompressed.Compressor.SNAPPY,
-                                           original_msg=query)
+    compressed = aiomongowire.OpCompressed(compressor=compressor, original_msg=query)
     future: Future[aiomongowire.OpReply] = await protocol.send_data(compressed)
     result = await future
     assert isinstance(result, aiomongowire.OpCompressed)

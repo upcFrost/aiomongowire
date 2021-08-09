@@ -1,8 +1,10 @@
 import io
+import zlib
 from enum import Enum
 from typing import Optional, Callable
 
 import snappy
+import zstandard
 
 from . import MessageHeader
 from .base_op import BaseOp
@@ -37,9 +39,9 @@ class OpCompressed(BaseOp):
             return self._value_
 
         NO_COMPRESSION = 0, lambda x: x, lambda x: x
-        SNAPPY = 1, lambda x: snappy.compress(x), lambda x: snappy.decompress(x)
-        ZLIB = 2, lambda x: x, lambda x: x
-        ZSTD = 3, lambda x: x, lambda x: x
+        SNAPPY = 1, snappy.compress, snappy.decompress
+        ZLIB = 2, zlib.compress, zlib.decompress
+        ZSTD = 3, zstandard.compress, zstandard.decompress
 
     def __init__(self, compressor: Compressor, original_msg: BaseOp, header: Optional[MessageHeader] = None):
         super().__init__(header)
