@@ -3,7 +3,7 @@ import io
 import logging
 import traceback
 from asyncio import transports, Future
-from typing import Optional, Dict
+from typing import Optional, Dict, Awaitable
 
 from .message import MongoWireMessage
 
@@ -23,7 +23,7 @@ class MongoWireProtocol(asyncio.Protocol):
         self._out_data: Dict[int, Future[MongoWireMessage]] = dict()
         self._logger = logging.getLogger('aiomongowire')
 
-    async def send_data(self, data: MongoWireMessage) -> Future:
+    def send_data(self, data: MongoWireMessage) -> Awaitable[MongoWireMessage]:
         """
         Adds data to the sending queue and returns future.
         If the OP is not supposed to return anything, future is returned completed with None inside
@@ -36,7 +36,7 @@ class MongoWireProtocol(asyncio.Protocol):
             self._out_data[data.header.request_id] = future
         else:
             future.set_result(None)
-        await self._msg_queue.put(data)
+        asyncio.create_task(self._msg_queue.put(data))
         return future
 
     async def _send_loop(self):
