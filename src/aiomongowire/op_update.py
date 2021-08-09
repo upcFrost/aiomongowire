@@ -1,11 +1,9 @@
 import io
 from enum import IntEnum
-from typing import Optional
 
 import bson
 
 from .base_op import BaseOp
-from .message_header import MessageHeader
 from .op_code import OpCode
 from .utils import decode_cstring
 
@@ -13,7 +11,7 @@ from .utils import decode_cstring
 class OpUpdate(BaseOp):
     """Update operation request"""
 
-    __slots__ = ['header', 'full_collection_name', 'flags', 'selector', 'update']
+    __slots__ = ['full_collection_name', 'flags', 'selector', 'update']
 
     class Flags(IntEnum):
         """Update operation flag bit positions"""
@@ -24,9 +22,7 @@ class OpUpdate(BaseOp):
     def op_code(cls) -> OpCode:
         return OpCode.OP_UPDATE
 
-    def __init__(self, full_collection_name: str, selector: dict, update: dict,
-                 header: Optional[MessageHeader] = None, flags: int = 0):
-        super().__init__(header)
+    def __init__(self, full_collection_name: str, selector: dict, update: dict, flags: int = 0):
         self.full_collection_name = full_collection_name
         self.flags = flags
         self.selector = selector
@@ -37,7 +33,7 @@ class OpUpdate(BaseOp):
         return False
 
     @classmethod
-    def _from_data(cls, message_length: int, header: MessageHeader, data: io.BytesIO) -> 'OpUpdate':
+    def _from_data(cls, data: io.BytesIO) -> 'OpUpdate':
         data.seek(4, io.SEEK_CUR)  # 0 - reserved for future use
         full_collection_name = decode_cstring(data)  # "dbname.collectionname"
         flags = int(data.read(4))  # bit vector
@@ -45,14 +41,13 @@ class OpUpdate(BaseOp):
         update = bson.decode_object(data)  # specification of the update to perform
 
         return cls(
-            header=header,
             full_collection_name=full_collection_name,
             flags=flags,
             selector=selector,
             update=update
         )
 
-    def _as_bytes(self) -> bytes:
+    def __bytes__(self):
         with io.BytesIO() as data:
             data.write(int.to_bytes(0, length=4, byteorder='little'))
             data.write(bson.encode_cstring(self.full_collection_name))

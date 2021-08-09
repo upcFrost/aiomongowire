@@ -5,7 +5,7 @@ import traceback
 from asyncio import transports, Future
 from typing import Optional, Dict
 
-from .base_op import BaseOp
+from .message import MongoWireMessage
 
 
 class MongoWireProtocol(asyncio.Protocol):
@@ -19,11 +19,11 @@ class MongoWireProtocol(asyncio.Protocol):
         self.connected: bool = False
 
         self._transport: Optional[asyncio.Transport] = None
-        self._msg_queue: asyncio.Queue[Optional[BaseOp]] = asyncio.Queue()
-        self._out_data: Dict[int, Future[BaseOp]] = dict()
+        self._msg_queue: asyncio.Queue[Optional[MongoWireMessage]] = asyncio.Queue()
+        self._out_data: Dict[int, Future[MongoWireMessage]] = dict()
         self._logger = logging.getLogger('aiomongowire')
 
-    async def send_data(self, data: BaseOp) -> Future:
+    async def send_data(self, data: MongoWireMessage) -> Future:
         """
         Adds data to the sending queue and returns future.
         If the OP is not supposed to return anything, future is returned completed with None inside
@@ -32,7 +32,7 @@ class MongoWireProtocol(asyncio.Protocol):
         :return: Response future
         """
         future = Future()
-        if data.has_reply():
+        if data.operation.has_reply():
             self._out_data[data.header.request_id] = future
         else:
             future.set_result(None)
@@ -68,7 +68,7 @@ class MongoWireProtocol(asyncio.Protocol):
         """
         try:
             with io.BytesIO(data) as recv:
-                msg = BaseOp.from_data(recv)
+                msg = MongoWireMessage.from_data(recv)
         except Exception:
             self._logger.error(traceback.format_exc())
             return

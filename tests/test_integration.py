@@ -7,6 +7,7 @@ from time import sleep
 import pytest
 
 import src.aiomongowire as aiomongowire
+from src.aiomongowire import MongoWireMessage
 from src.aiomongowire.base_op import BaseOp
 from src.aiomongowire.op_code import OpCode
 
@@ -50,31 +51,34 @@ async def test_connect(protocol):
 @pytest.mark.asyncio
 async def test_is_master(protocol):
     assert protocol.connected
-    data = aiomongowire.OpQuery(full_collection_name='admin.$cmd', query={'isMaster': 1}, number_to_return=1)
-    future: Future[BaseOp] = await protocol.send_data(data)
-    result = await future
-    assert isinstance(result, aiomongowire.OpReply)
-    assert len(result.documents) == 1
-    assert result.documents[0]['ok'] == 1
+    operation = aiomongowire.OpQuery(full_collection_name='admin.$cmd', query={'isMaster': 1}, number_to_return=1)
+    data = MongoWireMessage(operation=operation)
+    future: Future[MongoWireMessage] = await protocol.send_data(data)
+    result: MongoWireMessage = await future
+
+    assert isinstance(result.operation, aiomongowire.OpReply)
+    assert len(result.operation.documents) == 1
+    assert result.operation.documents[0]['ok'] == 1
 
 
 @pytest.mark.asyncio
 async def test_send_op_msg_insert(protocol, db_name, collection_name):
     assert protocol.connected
     header = aiomongowire.message_header.MessageHeader()
-    data = aiomongowire.OpMsg(header=header,
-                              sections=[aiomongowire.OpMsg.Insert(db=db_name, collection=collection_name),
-                                        aiomongowire.OpMsg.Document(0, 'documents', [{'a': 1}])])
-    future: Future[BaseOp] = await protocol.send_data(data)
+    operation = aiomongowire.OpMsg(sections=[aiomongowire.OpMsg.Insert(db=db_name, collection=collection_name),
+                                             aiomongowire.OpMsg.Document(0, 'documents', [{'a': 1}])])
+    data = MongoWireMessage(header=header, operation=operation)
+    future: Future[MongoWireMessage] = await protocol.send_data(data)
     result = await future
-    assert result.op_code() == OpCode.OP_MSG
+    assert result.operation.op_code() == OpCode.OP_MSG
     assert result.header.response_to == header.request_id
 
 
 @pytest.mark.asyncio
 async def test_send_op_insert(protocol, db_name, collection_name):
     assert protocol.connected
-    data = aiomongowire.OpInsert(f"{db_name}.{collection_name}", [{'a': 1}])
+    operation = aiomongowire.OpInsert(f"{db_name}.{collection_name}", [{'a': 1}])
+    data = MongoWireMessage(operation=operation)
     future: Future[BaseOp] = await protocol.send_data(data)
     result = await future
     assert result is None
@@ -84,10 +88,11 @@ async def test_send_op_insert(protocol, db_name, collection_name):
 async def test_send_op_query_no_such_db(protocol, db_name, collection_name):
     assert protocol.connected
     header = aiomongowire.MessageHeader()
-    data = aiomongowire.OpQuery(header=header, full_collection_name=f"{db_name}.{collection_name}", query={})
-    future: Future[BaseOp] = await protocol.send_data(data)
+    operation = aiomongowire.OpQuery(full_collection_name=f"{db_name}.{collection_name}", query={})
+    data = MongoWireMessage(header=header, operation=operation)
+    future: Future[MongoWireMessage] = await protocol.send_data(data)
     result = await future
-    assert result.op_code() == OpCode.OP_REPLY
+    assert result.operation.op_code() == OpCode.OP_REPLY
     assert result.header.response_to == header.request_id
 
 
@@ -96,16 +101,19 @@ async def test_insert_and_query(protocol, db_name, collection_name):
     assert protocol.connected
     object_id = uuid.uuid4().hex
 
-    data = aiomongowire.OpInsert(f"{db_name}.{collection_name}", [{'a': object_id}])
+    operation = aiomongowire.OpInsert(f"{db_name}.{collection_name}", [{'a': object_id}])
+    data = MongoWireMessage(operation=operation)
     future: Future[BaseOp] = await protocol.send_data(data)
     await future
 
-    data = aiomongowire.OpQuery(full_collection_name=f"{db_name}.{collection_name}",
-                                query={'a': object_id}, return_fields_selector=None)
-    future: Future[aiomongowire.OpReply] = await protocol.send_data(data)
-    result: aiomongowire.OpReply = await future
+    operation = aiomongowire.OpQuery(full_collection_name=f"{db_name}.{collection_name}",
+                                     query={'a': object_id}, return_fields_selector=None)
+    data = MongoWireMessage(operation=operation)
+    future: Future[MongoWireMessage] = await protocol.send_data(data)
+    result: MongoWireMessage = await future
 
-    assert result.documents[0]['a'] == object_id
+    assert isinstance(result.operation, aiomongowire.OpReply)
+    assert result.operation.documents[0]['a'] == object_id
 
 
 @pytest.mark.asyncio
@@ -113,23 +121,26 @@ async def test_insert_update_and_query(protocol, db_name, collection_name):
     assert protocol.connected
     object_id = uuid.uuid4().hex
 
-    data = aiomongowire.OpInsert(f"{db_name}.{collection_name}", [{'a': object_id}])
+    operation = aiomongowire.OpInsert(f"{db_name}.{collection_name}", [{'a': object_id}])
+    data = MongoWireMessage(operation=operation)
     future: Future[BaseOp] = await protocol.send_data(data)
     await future
 
     new_object_id = uuid.uuid4().hex
-    data = aiomongowire.OpUpdate(full_collection_name=f"{db_name}.{collection_name}",
-                                 selector={'a': object_id},
-                                 update={'$set': {'a': new_object_id}})
+    operation = aiomongowire.OpUpdate(full_collection_name=f"{db_name}.{collection_name}",
+                                      selector={'a': object_id},
+                                      update={'$set': {'a': new_object_id}})
+    data = MongoWireMessage(operation=operation)
     future: Future[BaseOp] = await protocol.send_data(data)
     await future
 
-    data = aiomongowire.OpQuery(full_collection_name=f"{db_name}.{collection_name}",
-                                query={'a': new_object_id}, return_fields_selector=None)
-    future: Future[aiomongowire.OpReply] = await protocol.send_data(data)
-    result: aiomongowire.OpReply = await future
+    operation = aiomongowire.OpQuery(full_collection_name=f"{db_name}.{collection_name}",
+                                     query={'a': new_object_id}, return_fields_selector=None)
+    data = MongoWireMessage(operation=operation)
+    future: Future[MongoWireMessage] = await protocol.send_data(data)
+    result: MongoWireMessage = await future
 
-    assert result.documents[0]['a'] == new_object_id
+    assert result.operation.documents[0]['a'] == new_object_id
 
 
 @pytest.mark.asyncio
@@ -137,37 +148,43 @@ async def test_insert_delete_and_query(protocol, db_name, collection_name):
     assert protocol.connected
     object_id = uuid.uuid4().hex
 
-    data = aiomongowire.OpInsert(f"{db_name}.{collection_name}", [{'a': object_id}])
+    operation = aiomongowire.OpInsert(f"{db_name}.{collection_name}", [{'a': object_id}])
+    data = MongoWireMessage(operation=operation)
     future: Future[BaseOp] = await protocol.send_data(data)
     await future
 
-    data = aiomongowire.OpDelete(full_collection_name=f"{db_name}.{collection_name}",
-                                 selector={'a': object_id})
-    future: Future[BaseOp] = await protocol.send_data(data)
+    operation = aiomongowire.OpDelete(full_collection_name=f"{db_name}.{collection_name}",
+                                      selector={'a': object_id})
+    data = MongoWireMessage(operation=operation)
+    future: Future[MongoWireMessage] = await protocol.send_data(data)
     await future
 
-    data = aiomongowire.OpQuery(full_collection_name=f"{db_name}.{collection_name}",
-                                query={'a': object_id}, return_fields_selector=None)
-    future: Future[aiomongowire.OpReply] = await protocol.send_data(data)
-    result: aiomongowire.OpReply = await future
+    operation = aiomongowire.OpQuery(full_collection_name=f"{db_name}.{collection_name}",
+                                     query={'a': object_id}, return_fields_selector=None)
+    data = MongoWireMessage(operation=operation)
+    future: Future[MongoWireMessage] = await protocol.send_data(data)
+    result: MongoWireMessage = await future
 
-    assert not result.documents
+    assert isinstance(result.operation, aiomongowire.OpReply)
+    assert not result.operation.documents
 
 
 @pytest.mark.asyncio
 async def test_get_more_no_cursor(protocol, db_name, collection_name):
     object_id = uuid.uuid4().hex
-    data = aiomongowire.OpInsert(f"{db_name}.{collection_name}", [{'a': object_id}])
-    future: Future[BaseOp] = await protocol.send_data(data)
+    operation = aiomongowire.OpInsert(f"{db_name}.{collection_name}", [{'a': object_id}])
+    data = MongoWireMessage(operation=operation)
+    future: Future[MongoWireMessage] = await protocol.send_data(data)
     await future
 
-    data = aiomongowire.OpGetMore(full_collection_name=f"{db_name}.{collection_name}",
-                                  number_to_return=1, cursor_id=123)
-    future: Future[aiomongowire.OpReply] = await protocol.send_data(data)
-    result: aiomongowire.OpReply = await future
+    operation = aiomongowire.OpGetMore(full_collection_name=f"{db_name}.{collection_name}",
+                                       number_to_return=1, cursor_id=123)
+    data = MongoWireMessage(operation=operation)
+    future: Future[MongoWireMessage] = await protocol.send_data(data)
+    result: MongoWireMessage = await future
 
-    assert isinstance(result, aiomongowire.OpReply)
-    assert result.response_flags == aiomongowire.OpReply.Flags.CURSOR_NOT_FOUND
+    assert isinstance(result.operation, aiomongowire.OpReply)
+    assert result.operation.response_flags == aiomongowire.OpReply.Flags.CURSOR_NOT_FOUND
 
 
 @pytest.mark.asyncio
@@ -179,27 +196,30 @@ async def test_insert_and_query_has_more(protocol, db_name, collection_name):
 
     for i in range(record_num):
         object_id = uuid.uuid4().hex
-        data = aiomongowire.OpInsert(f"{db_name}.{collection_name}", [{'a': object_id}])
-        future: Future[BaseOp] = await protocol.send_data(data)
+        operation = aiomongowire.OpInsert(f"{db_name}.{collection_name}", [{'a': object_id}])
+        data = MongoWireMessage(operation=operation)
+        future: Future[MongoWireMessage] = await protocol.send_data(data)
         await future
 
-    data = aiomongowire.OpQuery(full_collection_name=f"{db_name}.{collection_name}", query={},
-                                number_to_return=to_return_num)
-    future: Future[aiomongowire.OpReply] = await protocol.send_data(data)
-    result: aiomongowire.OpReply = await future
+    operation = aiomongowire.OpQuery(full_collection_name=f"{db_name}.{collection_name}", query={},
+                                     number_to_return=to_return_num)
+    data = MongoWireMessage(operation=operation)
+    future: Future[MongoWireMessage] = await protocol.send_data(data)
+    result: MongoWireMessage = await future
 
-    assert isinstance(result, aiomongowire.OpReply)
-    assert len(result.documents) == to_return_num
-    assert result.cursor_id
+    assert isinstance(result.operation, aiomongowire.OpReply)
+    assert len(result.operation.documents) == to_return_num
+    assert result.operation.cursor_id
 
-    data = aiomongowire.OpGetMore(full_collection_name=f"{db_name}.{collection_name}",
-                                  number_to_return=to_return_num, cursor_id=result.cursor_id)
-    future: Future[aiomongowire.OpReply] = await protocol.send_data(data)
-    result: aiomongowire.OpReply = await future
+    operation = aiomongowire.OpGetMore(full_collection_name=f"{db_name}.{collection_name}",
+                                       number_to_return=to_return_num, cursor_id=result.operation.cursor_id)
+    data = MongoWireMessage(operation=operation)
+    future: Future[MongoWireMessage] = await protocol.send_data(data)
+    result: MongoWireMessage = await future
 
-    assert isinstance(result, aiomongowire.OpReply)
-    assert len(result.documents) == to_return_num
-    assert result.cursor_id
+    assert isinstance(result.operation, aiomongowire.OpReply)
+    assert len(result.operation.documents) == to_return_num
+    assert result.operation.cursor_id
 
 
 @pytest.mark.parametrize('compressor', [
@@ -211,7 +231,8 @@ async def test_insert_and_query_has_more(protocol, db_name, collection_name):
 async def test_compressed(protocol, db_name, collection_name, compressor):
     query = aiomongowire.OpQuery(full_collection_name=f"{db_name}.{collection_name}", query={})
     compressed = aiomongowire.OpCompressed(compressor=compressor, original_msg=query)
-    future: Future[aiomongowire.OpReply] = await protocol.send_data(compressed)
+    data = MongoWireMessage(operation=compressed)
+    future: Future[MongoWireMessage] = await protocol.send_data(data)
     result = await future
-    assert isinstance(result, aiomongowire.OpCompressed)
-    assert isinstance(result.original_msg, aiomongowire.OpReply)
+    assert isinstance(result.operation, aiomongowire.OpCompressed)
+    assert isinstance(result.operation.original_msg, aiomongowire.OpReply)

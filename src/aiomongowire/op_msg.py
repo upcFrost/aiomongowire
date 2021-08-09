@@ -1,11 +1,10 @@
 import io
 from enum import IntEnum, IntFlag
-from typing import SupportsBytes, List, Optional
+from typing import SupportsBytes, List
 
 import bson
 
 from .base_op import BaseOp
-from .message_header import MessageHeader
 from .op_code import OpCode
 
 
@@ -13,7 +12,7 @@ class OpMsg(BaseOp):
     """
     Mongo 3.6+ OP_MSG
     """
-    __slots__ = ['header', 'flag_bits', 'sections', 'checksum']
+    __slots__ = ['flag_bits', 'sections', 'checksum']
 
     class PayloadType(IntEnum):
         """
@@ -130,9 +129,7 @@ class OpMsg(BaseOp):
         MORE_TO_COME = 1 << 1  # Another message will follow this one without further action from the receiver
         EXHAUST_ALLOWED = 1 << 16  # The client is prepared for multiple replies to this request using the moreToCome
 
-    def __init__(self, sections: List[Section], checksum: int = None, header: Optional[MessageHeader] = None,
-                 flag_bits: int = 0):
-        super().__init__(header)
+    def __init__(self, sections: List[Section], checksum: int = None, flag_bits: int = 0):
         self.flag_bits = flag_bits
         self.sections = sections
         self.checksum = checksum
@@ -146,7 +143,7 @@ class OpMsg(BaseOp):
         return OpCode.OP_MSG
 
     @classmethod
-    def _from_data(cls, message_length: int, header: MessageHeader, data: io.BytesIO):
+    def _from_data(cls, data: io.BytesIO):
         flag_bits = int.from_bytes(data.read(4), byteorder='little', signed=False)  # uint32, message flags
 
         sections = {}
@@ -158,9 +155,9 @@ class OpMsg(BaseOp):
         else:
             raise ValueError(f"Unknown section type for OpMsg: {next_section}")
         checksum = int.from_bytes(data.read(4), byteorder='little', signed=False)  # optional CRC-32C checksum
-        return cls(header=header, flag_bits=flag_bits, sections=list(sections.values()), checksum=checksum)
+        return cls(flag_bits=flag_bits, sections=list(sections.values()), checksum=checksum)
 
-    def _as_bytes(self) -> bytes:
+    def __bytes__(self):
         with io.BytesIO() as data:
             data.write(self.flag_bits.to_bytes(length=4, byteorder='little', signed=False))
             for section in self.sections:

@@ -5,7 +5,6 @@ from typing import Optional
 import bson
 
 from .base_op import BaseOp
-from .message_header import MessageHeader
 from .op_code import OpCode
 from .utils import decode_cstring
 
@@ -15,7 +14,7 @@ class OpQuery(BaseOp):
     The OP_QUERY message is used to query the database for documents in a collection
     """
 
-    __slots__ = ['header', 'flags', 'full_collection_name', 'number_to_skip', 'number_to_return', 'query',
+    __slots__ = ['flags', 'full_collection_name', 'number_to_skip', 'number_to_return', 'query',
                  'return_fields_selector']
 
     class Flags(IntFlag):
@@ -37,8 +36,7 @@ class OpQuery(BaseOp):
         return True
 
     def __init__(self, full_collection_name: str, query: dict, number_to_skip: int = 0, number_to_return: int = 0,
-                 return_fields_selector: Optional[dict] = None, header: Optional[MessageHeader] = None, flags: int = 0):
-        super().__init__(header)
+                 return_fields_selector: Optional[dict] = None, flags: int = 0):
         self.flags = flags
         self.full_collection_name = full_collection_name
         self.number_to_skip = number_to_skip
@@ -47,7 +45,7 @@ class OpQuery(BaseOp):
         self.return_fields_selector = return_fields_selector
 
     @classmethod
-    def _from_data(cls, message_length: int, header: MessageHeader, data: io.BytesIO):
+    def _from_data(cls, data: io.BytesIO):
         # bit vector of query options
         flags = int.from_bytes(data.read(4), byteorder='little', signed=False)
         # "dbname.collection_name"
@@ -66,11 +64,11 @@ class OpQuery(BaseOp):
         else:
             return_fields_selector = None
 
-        return cls(header=header, flags=flags, full_collection_name=full_collection_name,
+        return cls(flags=flags, full_collection_name=full_collection_name,
                    number_to_skip=number_to_skip, number_to_return=number_to_return,
                    query=query, return_fields_selector=return_fields_selector)
 
-    def _as_bytes(self) -> bytes:
+    def __bytes__(self):
         with io.BytesIO() as data:
             data.write(int.to_bytes(self.flags, length=4, byteorder='little', signed=False))
             data.write(bson.encode_cstring(self.full_collection_name))

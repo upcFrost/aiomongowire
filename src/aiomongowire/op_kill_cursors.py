@@ -1,8 +1,7 @@
 import io
-from typing import List, Optional
+from typing import List
 
 from .base_op import BaseOp
-from .message_header import MessageHeader
 from .op_code import OpCode
 
 
@@ -10,7 +9,7 @@ class OpKillCursors(BaseOp):
     """
     OP_KILL_CURSORS is used to close an active cursor in the database
     """
-    __slots__ = ['header', 'number_of_cursor_ids', 'cursor_ids']
+    __slots__ = ['number_of_cursor_ids', 'cursor_ids']
 
     @classmethod
     def op_code(cls) -> OpCode:
@@ -20,22 +19,21 @@ class OpKillCursors(BaseOp):
     def has_reply(cls) -> bool:
         return False
 
-    def __init__(self, number_of_cursor_ids: int, cursor_ids: List[int], header: Optional[MessageHeader] = None):
-        super().__init__(header)
+    def __init__(self, number_of_cursor_ids: int, cursor_ids: List[int]):
         self.number_of_cursor_ids = number_of_cursor_ids
         self.cursor_ids = cursor_ids
 
     @classmethod
-    def _from_data(cls, message_length: int, header: MessageHeader, data: io.BytesIO):
+    def _from_data(cls, data: io.BytesIO):
         data.seek(4, io.SEEK_CUR)  # 0 - reserved for future use
         # number of cursorIDs in message
         number_of_cursor_ids = int.from_bytes(data.read(4), byteorder='little', signed=True)
         # sequence of cursorIDs to close
         cursor_ids = [int.from_bytes(data.read(8), byteorder='little', signed=True)
                       for _ in range(number_of_cursor_ids)]
-        return cls(header=header, number_of_cursor_ids=number_of_cursor_ids, cursor_ids=cursor_ids)
+        return cls(number_of_cursor_ids=number_of_cursor_ids, cursor_ids=cursor_ids)
 
-    def _as_bytes(self) -> bytes:
+    def __bytes__(self):
         with io.BytesIO() as data:
             data.write(int.to_bytes(0, length=4, byteorder='little'))
             data.write(self.number_of_cursor_ids.to_bytes(length=4, byteorder='little', signed=True))

@@ -1,12 +1,11 @@
 import io
 import zlib
 from enum import Enum
-from typing import Optional, Callable
+from typing import Callable
 
 import snappy
 import zstandard
 
-from . import MessageHeader
 from .base_op import BaseOp
 from .op_code import OpCode
 
@@ -43,26 +42,21 @@ class OpCompressed(BaseOp):
         ZLIB = 2, zlib.compress, zlib.decompress
         ZSTD = 3, zstandard.compress, zstandard.decompress
 
-    def __init__(self, compressor: Compressor, original_msg: BaseOp, header: Optional[MessageHeader] = None):
-        super().__init__(header)
+    def __init__(self, compressor: Compressor, original_msg: BaseOp):
         self.compressor = compressor
         self.original_msg = original_msg
 
     @classmethod
-    def _from_data(cls, message_length: int, header: MessageHeader, data: io.BytesIO):
-        original_opcode = data.read(4)
+    def _from_data(cls, data: io.BytesIO):
+        original_opcode = OpCode(int.from_bytes(data.read(4), byteorder='little', signed=False))
         original_len = data.read(4)
         compressor = OpCompressed.Compressor(int.from_bytes(data.read(1), byteorder='little', signed=False))
         compressed = data.read()
         decompressed = compressor.decompress(compressed)
-        return cls(
-            header=header,
-            compressor=compressor,
-            original_msg=BaseOp.from_data(io.BytesIO(original_len + bytes(header) + original_opcode + decompressed))
-        )
+        return cls(compressor=compressor, original_msg=BaseOp.from_data(original_opcode, io.BytesIO(decompressed)))
 
-    def _as_bytes(self) -> bytes:
-        original_bytes = self.original_msg._as_bytes()
+    def __bytes__(self):
+        original_bytes = bytes(self.original_msg)
         compressed = self.compressor.compress(original_bytes)
         with io.BytesIO() as data:
             data.write(int.to_bytes(self.original_msg.op_code(), length=4, byteorder='little'))
