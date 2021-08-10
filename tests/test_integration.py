@@ -3,6 +3,7 @@ import os
 import uuid
 from asyncio import Future
 from time import sleep
+from typing import Type
 
 import pytest
 
@@ -208,12 +209,12 @@ async def test_insert_and_query_has_more(protocol, db_name, collection_name):
 
 
 @pytest.mark.parametrize('compressor', [
-    aiomongowire.OpCompressed.Compressor.SNAPPY,
-    aiomongowire.OpCompressed.Compressor.ZLIB,
-    aiomongowire.OpCompressed.Compressor.ZSTD
+    aiomongowire.compressor.CompressorSnappy,
+    aiomongowire.compressor.CompressorZlib,
+    aiomongowire.compressor.CompressorZstd
 ])
 @pytest.mark.asyncio
-async def test_compressed(protocol, db_name, collection_name, compressor):
+async def test_compressed(protocol, db_name, collection_name, compressor: Type[aiomongowire.Compressor]):
     query = aiomongowire.OpQuery(full_collection_name=f"{db_name}.{collection_name}", query={})
     compressed = aiomongowire.OpCompressed(compressor=compressor, original_msg=query)
     data = MongoWireMessage(operation=compressed)

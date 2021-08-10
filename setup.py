@@ -35,6 +35,10 @@ setup(
     packages=find_packages(where='src', exclude=['tests']),
     python_requires='>=3.6, <4',
     install_requires=['bson'],
+    extras_require={
+        'snappy': ['python-snappy~=0.6.0'],
+        'zstd': ['zstandard~=0.15.0'],
+    },
     project_urls={
         'Bug Reports': 'https://github.com/upcFrost/aiomongowire/issues',
         'Source': 'https://github.com/upcFrost/aiomongowire',
