@@ -40,7 +40,7 @@ class OpReply(BaseOp):
 
     @classmethod
     def _from_data(cls, data: io.BytesIO):
-        response_flags = int.from_bytes(data.read(4), byteorder='little', signed=True)  # bit vector
+        response_flags = OpReply.Flags(int.from_bytes(data.read(4), byteorder='little', signed=True))  # bit vector
         # cursor id if client needs to do get more's
         cursor_id = int.from_bytes(data.read(8), byteorder='little', signed=True)
         # where in the cursor this reply is starting
