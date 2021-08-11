@@ -71,8 +71,12 @@ except ImportError:
     pass
 
 try:
-    if _BSON_PARSER:
-        raise ImportError
+    try:
+        import pymongo
+
+        raise FileExistsError
+    except ImportError:
+        pass
     import bson
 
 
@@ -100,4 +104,6 @@ try:
 
     _BSON_PARSER = PyBson()
 except ImportError:
+    pass
+except FileExistsError:
     pass
