@@ -24,14 +24,14 @@ jobs:
         python-version: ${{ matrix.python-version }}
     
     - name: Install dependencies
+      env:
+        BSON: ${{ matrix.bson }}
       run: |
         python -m pip install --upgrade pip
         python -m pip install flake8 pytest
         if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
         if [ -f requirements-dev.txt ]; then pip install -r requirements-dev.txt; fi
-        pip install ${{ bson }}
-      with:
-        bson: ${{ matrix.bson }}
+        pip install ${{ $BSON }}
     
     - name: Lint with flake8
       run: |
