@@ -13,6 +13,7 @@ jobs:
       matrix:
         python-version: [ 3.6, 3.7, 3.8, 3.9 ]
         mongodb-version: [ 4.0, 4.2, 4.4 ]
+        bson: [ pymongo, bson ]
 
     steps:
     - uses: actions/checkout@v2
@@ -28,6 +29,9 @@ jobs:
         python -m pip install flake8 pytest
         if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
         if [ -f requirements-dev.txt ]; then pip install -r requirements-dev.txt; fi
+        pip install ${{ bson }}
+      with:
+        bson: ${{ matrix.bson }}
     
     - name: Lint with flake8
       run: |
