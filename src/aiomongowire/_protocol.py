@@ -88,8 +88,7 @@ class MongoWireProtocol(asyncio.Protocol):
 
     def connection_lost(self, exc: Optional[Exception]) -> None:
         self.connected = False
-        loop = asyncio.get_event_loop()
-        loop.run_until_complete(self._msg_queue.put(None))
-        loop.run_until_complete(self._msg_queue.join())
+        asyncio.ensure_future(self._msg_queue.put(None))
+        asyncio.ensure_future(self._msg_queue.join())
         if exc:
             raise exc
