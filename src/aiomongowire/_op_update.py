@@ -1,11 +1,9 @@
 import io
 from enum import IntEnum
 
-import bson
-
-from .base_op import BaseOp
-from .op_code import OpCode
-from .utils import decode_cstring
+from ._base_op import BaseOp
+from ._bson import get_bson_parser
+from ._op_code import OpCode
 
 
 class OpUpdate(BaseOp):
@@ -35,10 +33,10 @@ class OpUpdate(BaseOp):
     @classmethod
     def _from_data(cls, data: io.BytesIO) -> 'OpUpdate':
         data.seek(4, io.SEEK_CUR)  # 0 - reserved for future use
-        full_collection_name = decode_cstring(data)  # "dbname.collectionname"
+        full_collection_name = get_bson_parser().decode_cstring(data)  # "dbname.collectionname"
         flags = int(data.read(4))  # bit vector
-        selector = bson.decode_object(data)  # the query to select the document
-        update = bson.decode_object(data)  # specification of the update to perform
+        selector = get_bson_parser().decode_object(data)  # the query to select the document
+        update = get_bson_parser().decode_object(data)  # specification of the update to perform
 
         return cls(
             full_collection_name=full_collection_name,
@@ -50,8 +48,8 @@ class OpUpdate(BaseOp):
     def __bytes__(self):
         with io.BytesIO() as data:
             data.write(int.to_bytes(0, length=4, byteorder='little'))
-            data.write(bson.encode_cstring(self.full_collection_name))
+            data.write(get_bson_parser().encode_cstring(self.full_collection_name))
             data.write(int.to_bytes(self.flags, length=4, byteorder='little', signed=False))
-            data.write(bson.dumps(self.selector))
-            data.write(bson.dumps(self.update))
+            data.write(get_bson_parser().encode_object(self.selector))
+            data.write(get_bson_parser().encode_object(self.update))
             return data.getvalue()

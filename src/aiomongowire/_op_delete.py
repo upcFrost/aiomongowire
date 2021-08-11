@@ -1,11 +1,9 @@
 import io
 from enum import IntFlag
 
-import bson
-
-from .base_op import BaseOp
-from .op_code import OpCode
-from .utils import decode_cstring
+from ._base_op import BaseOp
+from ._bson import get_bson_parser
+from ._op_code import OpCode
 
 
 class OpDelete(BaseOp):
@@ -33,16 +31,18 @@ class OpDelete(BaseOp):
 
     @classmethod
     def _from_data(cls, data: io.BytesIO):
+        bson_parser = get_bson_parser()
         data.seek(4, io.SEEK_CUR)  # 0 - reserved for future use
-        full_collection_name = decode_cstring(data)  # "dbname.collectionname"
+        full_collection_name = bson_parser.decode_cstring(data)  # "dbname.collectionname"
         flags = int(data.read(4))  # bit vector
-        selector = bson.decode_object(data)  # query object.
+        selector = bson_parser.decode_object(data)  # query object.
         return cls(full_collection_name=full_collection_name, flags=flags, selector=selector)
 
     def __bytes__(self):
+        bson_parser = get_bson_parser()
         with io.BytesIO() as data:
             data.write(int.to_bytes(0, length=4, byteorder='little'))
-            data.write(bson.encode_cstring(self.full_collection_name))
+            data.write(bson_parser.encode_cstring(self.full_collection_name))
             data.write(int.to_bytes(self.flags, length=4, byteorder='little', signed=False))
-            data.write(bson.dumps(self.selector))
+            data.write(bson_parser.encode_object(self.selector))
             return data.getvalue()

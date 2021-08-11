@@ -1,9 +1,9 @@
 import io
 from typing import Type
 
-from .base_op import BaseOp
-from .compressor import Compressor
-from .op_code import OpCode
+from ._base_op import BaseOp
+from ._compressor import Compressor
+from ._op_code import OpCode
 
 
 class OpCompressed(BaseOp):

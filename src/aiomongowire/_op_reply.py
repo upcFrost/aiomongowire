@@ -2,10 +2,9 @@ import io
 from enum import IntFlag
 from typing import List
 
-import bson
-
-from .base_op import BaseOp
-from .op_code import OpCode
+from ._base_op import BaseOp
+from ._bson import get_bson_parser
+from ._op_code import OpCode
 
 
 class OpReply(BaseOp):
@@ -52,7 +51,7 @@ class OpReply(BaseOp):
         for _ in range(number_returned):
             len_bytes = data.read(4)
             doc_len = int.from_bytes(len_bytes, byteorder='little', signed=False)
-            documents.append(bson.loads(len_bytes + data.read(doc_len - 4)))
+            documents.append(get_bson_parser().decode_object(len_bytes + data.read(doc_len - 4)))
         return cls(
             response_flags=response_flags,
             cursor_id=cursor_id,

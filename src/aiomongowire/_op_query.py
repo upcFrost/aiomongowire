@@ -2,11 +2,9 @@ import io
 from enum import IntFlag
 from typing import Optional
 
-import bson
-
-from .base_op import BaseOp
-from .op_code import OpCode
-from .utils import decode_cstring
+from ._base_op import BaseOp
+from ._bson import get_bson_parser
+from ._op_code import OpCode
 
 
 class OpQuery(BaseOp):
@@ -49,18 +47,18 @@ class OpQuery(BaseOp):
         # bit vector of query options
         flags = int.from_bytes(data.read(4), byteorder='little', signed=False)
         # "dbname.collection_name"
-        full_collection_name = decode_cstring(data)
+        full_collection_name = get_bson_parser().decode_cstring(data)
         # number of documents to skip
         number_to_skip = int.from_bytes(data.read(4), byteorder='little', signed=True)
         # number of documents to return in the first OP_REPLY batch
         number_to_return = int.from_bytes(data.read(4), byteorder='little', signed=True)
         # query object
-        query = bson.decode_object(data)
+        query = get_bson_parser().decode_object(data)
 
         data_left = data.getvalue()
         if data_left:
             # Optional. Selector indicating the fields to return.
-            return_fields_selector = bson.decode_object(data_left)
+            return_fields_selector = get_bson_parser().decode_object(data_left)
         else:
             return_fields_selector = None
 
@@ -71,10 +69,10 @@ class OpQuery(BaseOp):
     def __bytes__(self):
         with io.BytesIO() as data:
             data.write(int.to_bytes(self.flags, length=4, byteorder='little', signed=False))
-            data.write(bson.encode_cstring(self.full_collection_name))
+            data.write(get_bson_parser().encode_cstring(self.full_collection_name))
             data.write(int.to_bytes(self.number_to_skip, length=4, byteorder='little', signed=True))
             data.write(int.to_bytes(self.number_to_return, length=4, byteorder='little', signed=True))
-            data.write(bson.dumps(self.query))
+            data.write(get_bson_parser().encode_object(self.query))
             if self.return_fields_selector:
-                data.write(bson.dumps(self.return_fields_selector))
+                data.write(get_bson_parser().encode_object(self.return_fields_selector))
             return data.getvalue()

@@ -1,8 +1,8 @@
 import io
 
-from .base_op import BaseOp
-from .message_header import MessageHeader
-from .op_code import OpCode
+from ._base_op import BaseOp
+from ._message_header import MessageHeader
+from ._op_code import OpCode
 
 
 class MongoWireMessage:

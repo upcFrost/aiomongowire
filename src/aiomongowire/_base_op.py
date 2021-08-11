@@ -2,7 +2,7 @@ import abc
 import io
 from typing import Dict, Type, SupportsBytes
 
-from .op_code import OpCode
+from ._op_code import OpCode
 
 _OP_CLASSES_BY_CODE: Dict[OpCode, Type['BaseOp']] = {}
 

@@ -1,8 +1,8 @@
 import io
 from typing import List
 
-from .base_op import BaseOp
-from .op_code import OpCode
+from ._base_op import BaseOp
+from ._op_code import OpCode
 
 
 class OpKillCursors(BaseOp):

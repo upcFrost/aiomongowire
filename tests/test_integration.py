@@ -8,7 +8,7 @@ import pytest
 
 import src.aiomongowire as aiomongowire
 from src.aiomongowire import MongoWireMessage
-from src.aiomongowire.op_code import OpCode
+from src.aiomongowire._op_code import OpCode
 
 
 @pytest.fixture
@@ -36,7 +36,7 @@ else:
 @pytest.fixture
 async def protocol(mongo) -> aiomongowire.MongoWireProtocol:
     loop = asyncio.get_event_loop()
-    transport, protocol = await loop.create_connection(lambda: aiomongowire.protocol.MongoWireProtocol(),
+    transport, protocol = await loop.create_connection(lambda: aiomongowire._protocol.MongoWireProtocol(),
                                                        '127.0.0.1', 27017)
     yield protocol
     transport.close()
@@ -62,7 +62,7 @@ async def test_is_master(protocol):
 @pytest.mark.asyncio
 async def test_send_op_msg_insert(protocol, db_name, collection_name):
     assert protocol.connected
-    header = aiomongowire.message_header.MessageHeader()
+    header = aiomongowire._message_header.MessageHeader()
     operation = aiomongowire.OpMsg(sections=[aiomongowire.OpMsg.Insert(db=db_name, collection=collection_name),
                                              aiomongowire.OpMsg.Document(0, 'documents', [{'a': 1}])])
     data = MongoWireMessage(header=header, operation=operation)
@@ -238,9 +238,9 @@ async def test_insert_and_query_has_more(protocol, db_name, collection_name):
 
 
 @pytest.mark.parametrize('compressor', [
-    aiomongowire.compressor.CompressorSnappy,
-    aiomongowire.compressor.CompressorZlib,
-    aiomongowire.compressor.CompressorZstd
+    aiomongowire._compressor.CompressorSnappy,
+    aiomongowire._compressor.CompressorZlib,
+    aiomongowire._compressor.CompressorZstd
 ])
 @pytest.mark.asyncio
 async def test_compressed(protocol, db_name, collection_name, compressor: Type[aiomongowire.Compressor]):

@@ -1,11 +1,9 @@
 import io
 from enum import IntFlag
 
-import bson
-
-from .base_op import BaseOp
-from .op_code import OpCode
-from .utils import decode_cstring
+from ._base_op import BaseOp
+from ._bson import get_bson_parser
+from ._op_code import OpCode
 
 
 class OpInsert(BaseOp):
@@ -36,14 +34,14 @@ class OpInsert(BaseOp):
     @classmethod
     def _from_data(cls, data: io.BytesIO):
         flags = int.from_bytes(data.read(4), byteorder='little', signed=True)  # bit vector
-        full_collection_name = decode_cstring(data)  # "dbname.collectionname"
-        documents = bson.decode_object(data)  # one or more documents to insert into the collection
+        full_collection_name = get_bson_parser().decode_cstring(data)  # "dbname.collectionname"
+        documents = get_bson_parser().decode_object(data)  # one or more documents to insert into the collection
         return cls(flags=flags, full_collection_name=full_collection_name, documents=documents)
 
     def __bytes__(self):
         with io.BytesIO() as data:
             data.write(self.flags.to_bytes(length=4, byteorder='little', signed=True))
-            data.write(bson.encode_cstring(self.full_collection_name))
+            data.write(get_bson_parser().encode_cstring(self.full_collection_name))
             for doc in self.documents:
-                data.write(bson.dumps(doc))
+                data.write(get_bson_parser().encode_object(doc))
             return data.getvalue()

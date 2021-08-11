@@ -2,10 +2,9 @@ import io
 from enum import IntEnum, IntFlag
 from typing import SupportsBytes, List
 
-import bson
-
-from .base_op import BaseOp
-from .op_code import OpCode
+from ._base_op import BaseOp
+from ._bson import get_bson_parser
+from ._op_code import OpCode
 
 
 class OpMsg(BaseOp):
@@ -42,7 +41,8 @@ class OpMsg(BaseOp):
             self.data = data
 
         def __bytes__(self) -> bytes:
-            return int.to_bytes(self.payload_type, length=1, byteorder='little') + bson.dumps(self.data)
+            _type = int.to_bytes(self.payload_type, length=1, byteorder='little')
+            return _type + get_bson_parser().encode_object(self.data)
 
         @classmethod
         def identifier(cls) -> str:
@@ -56,7 +56,7 @@ class OpMsg(BaseOp):
         def from_data(cls, data: io.BytesIO) -> 'OpMsg.Body':
             len_bytes = data.read(4)
             data_len = int.from_bytes(len_bytes, byteorder='little')
-            return cls(bson.loads(len_bytes + data.read(data_len - 4)))
+            return cls(get_bson_parser().decode_object(len_bytes + data.read(data_len - 4)))
 
         def __str__(self):
             return str(self.data)
@@ -111,9 +111,9 @@ class OpMsg(BaseOp):
 
         def __bytes__(self):
             with io.BytesIO() as data:
-                data.write(bson.encode_cstring(self.identifier))
+                data.write(get_bson_parser().encode_cstring(self.identifier))
                 for doc in self.documents:
-                    data.write(bson.dumps(doc))
+                    data.write(get_bson_parser().encode_object(doc))
                 data = data.getvalue()
                 self.size = len(data) + 4
 

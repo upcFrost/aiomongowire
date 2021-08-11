@@ -4,10 +4,23 @@ MongoDB Wire Protocol for asyncio
 
 import pathlib
 
+from pkg_resources import get_distribution, DistributionNotFound
 from setuptools import setup, find_packages
 
 here = pathlib.Path(__file__).parent.resolve()
 long_description = (here / 'README.md').read_text(encoding='utf-8')
+
+
+def get_dist(pkgname):
+    try:
+        return get_distribution(pkgname)
+    except DistributionNotFound:
+        return None
+
+
+install_requires = []
+if get_dist('bson') is None and get_dist('pymongo') is None:
+    install_requires.append('bson')
 
 setup(
     name='aiomongowire',
@@ -34,10 +47,12 @@ setup(
     package_dir={'': 'src'},
     packages=find_packages(where='src', exclude=['tests']),
     python_requires='>=3.6, <4',
-    install_requires=['bson'],
+    install_requires=install_requires,
     extras_require={
-        'snappy': ['python-snappy~=0.6.0'],
-        'zstd': ['zstandard~=0.15.0'],
+        'snappy': ['python-snappy~=0.6'],
+        'zstd': ['zstandard~=0.15'],
+        'pymongo': ['pymongo~=3.12'],
+        'bson': ['bson~=0.5'],
     },
     project_urls={
         'Bug Reports': 'https://github.com/upcFrost/aiomongowire/issues',
