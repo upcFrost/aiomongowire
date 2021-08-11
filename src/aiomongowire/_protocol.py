@@ -36,7 +36,7 @@ class MongoWireProtocol(asyncio.Protocol):
             self._out_data[data.header.request_id] = future
         else:
             future.set_result(None)
-        asyncio.create_task(self._msg_queue.put(data))
+        asyncio.ensure_future(self._msg_queue.put(data))
         return future
 
     async def _send_loop(self):
@@ -84,7 +84,7 @@ class MongoWireProtocol(asyncio.Protocol):
     def connection_made(self, transport: transports.BaseTransport) -> None:
         self._transport = transport
         self.connected = True
-        asyncio.get_event_loop().create_task(self._send_loop())
+        asyncio.ensure_future(self._send_loop())
 
     def connection_lost(self, exc: Optional[Exception]) -> None:
         self.connected = False
