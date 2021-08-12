@@ -2,7 +2,8 @@ name: Publish Python package
 
 on: 
   push:
-    - master
+    branches:
+      - master
 
 jobs:
   build-n-publish:
