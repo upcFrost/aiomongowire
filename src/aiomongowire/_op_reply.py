@@ -1,6 +1,6 @@
 import io
 from enum import IntFlag
-from typing import List
+from typing import List, ClassVar
 
 from ._base_op import BaseOp
 from ._bson import get_bson_parser
@@ -15,13 +15,7 @@ class OpReply(BaseOp):
     """
     __slots__ = ['response_flags', 'cursor_id', 'starting_from', 'number_returned', 'documents']
 
-    @classmethod
-    def op_code(cls) -> OpCode:
-        return OpCode.OP_REPLY
-
-    @classmethod
-    def has_reply(cls) -> bool:
-        return False
+    op_code: ClassVar[OpCode] = OpCode.OP_REPLY
 
     class Flags(IntFlag):
         CURSOR_NOT_FOUND = 1 << 0
@@ -37,8 +31,12 @@ class OpReply(BaseOp):
         self.number_returned = number_returned
         self.documents = documents
 
+    @property
+    def has_reply(self) -> bool:
+        return False
+
     @classmethod
-    def _from_data(cls, data: io.BytesIO):
+    def from_data(cls, data: io.BytesIO):
         response_flags = OpReply.Flags(int.from_bytes(data.read(4), byteorder='little', signed=True))  # bit vector
         # cursor id if client needs to do get more's
         cursor_id = int.from_bytes(data.read(8), byteorder='little', signed=True)

@@ -1,4 +1,5 @@
 import io
+from typing import ClassVar
 
 from ._base_op import BaseOp
 from ._bson import get_bson_parser
@@ -11,21 +12,19 @@ class OpGetMore(BaseOp):
     """
     __slots__ = ['full_collection_name', 'number_to_return', 'cursor_id']
 
+    op_code: ClassVar[OpCode] = OpCode.OP_GET_MORE
+
     def __init__(self, full_collection_name: str, number_to_return: int, cursor_id: int):
         self.full_collection_name = full_collection_name
         self.number_to_return = number_to_return
         self.cursor_id = cursor_id
 
-    @classmethod
-    def has_reply(cls) -> bool:
+    @property
+    def has_reply(self) -> bool:
         return True
 
     @classmethod
-    def op_code(cls) -> OpCode:
-        return OpCode.OP_GET_MORE
-
-    @classmethod
-    def _from_data(cls, data: io.BytesIO) -> 'OpGetMore':
+    def from_data(cls, data: io.BytesIO) -> 'OpGetMore':
         data.seek(4, io.SEEK_CUR)  # 0 - reserved for future use
         full_collection_name = get_bson_parser().decode_cstring(data)  # "dbname.collectionname"
         number_to_return = int(data.read(4))  # number of documents to return

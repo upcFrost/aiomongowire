@@ -1,5 +1,6 @@
 import io
 from enum import IntEnum
+from typing import ClassVar
 
 from ._base_op import BaseOp
 from ._bson import get_bson_parser
@@ -11,14 +12,12 @@ class OpUpdate(BaseOp):
 
     __slots__ = ['full_collection_name', 'flags', 'selector', 'update']
 
+    op_code: ClassVar[OpCode] = OpCode.OP_UPDATE
+
     class Flags(IntEnum):
         """Update operation flag bit positions"""
         UPSERT = 1 << 0
         MULTI_UPDATE = 1 << 1
-
-    @classmethod
-    def op_code(cls) -> OpCode:
-        return OpCode.OP_UPDATE
 
     def __init__(self, full_collection_name: str, selector: dict, update: dict, flags: int = 0):
         self.full_collection_name = full_collection_name
@@ -26,12 +25,12 @@ class OpUpdate(BaseOp):
         self.selector = selector
         self.update = update
 
-    @classmethod
-    def has_reply(cls) -> bool:
+    @property
+    def has_reply(self) -> bool:
         return False
 
     @classmethod
-    def _from_data(cls, data: io.BytesIO) -> 'OpUpdate':
+    def from_data(cls, data: io.BytesIO) -> 'OpUpdate':
         data.seek(4, io.SEEK_CUR)  # 0 - reserved for future use
         full_collection_name = get_bson_parser().decode_cstring(data)  # "dbname.collectionname"
         flags = int(data.read(4))  # bit vector

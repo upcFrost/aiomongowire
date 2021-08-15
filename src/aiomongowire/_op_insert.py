@@ -1,5 +1,6 @@
 import io
 from enum import IntFlag
+from typing import ClassVar
 
 from ._base_op import BaseOp
 from ._bson import get_bson_parser
@@ -14,6 +15,8 @@ class OpInsert(BaseOp):
     """
     __slots__ = ['flags', 'full_collection_name', 'documents']
 
+    op_code: ClassVar[OpCode] = OpCode.OP_INSERT
+
     class Flags(IntFlag):
         """OP_INSERT flag bits"""
         CONTINUE_ON_ERROR = 1 << 0
@@ -23,16 +26,12 @@ class OpInsert(BaseOp):
         self.full_collection_name = full_collection_name  # "dbname.collectionname"
         self.documents = documents  # one or more documents to insert into the collection
 
-    @classmethod
-    def has_reply(cls) -> bool:
+    @property
+    def has_reply(self) -> bool:
         return False
 
     @classmethod
-    def op_code(cls) -> OpCode:
-        return OpCode.OP_INSERT
-
-    @classmethod
-    def _from_data(cls, data: io.BytesIO):
+    def from_data(cls, data: io.BytesIO):
         flags = int.from_bytes(data.read(4), byteorder='little', signed=True)  # bit vector
         full_collection_name = get_bson_parser().decode_cstring(data)  # "dbname.collectionname"
         documents = get_bson_parser().decode_object(data)  # one or more documents to insert into the collection

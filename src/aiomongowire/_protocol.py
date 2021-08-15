@@ -32,7 +32,7 @@ class MongoWireProtocol(asyncio.Protocol):
         :return: Response future
         """
         future = Future()
-        if data.operation.has_reply():
+        if data.operation.has_reply:
             self._out_data[data.header.request_id] = future
         else:
             future.set_result(None)

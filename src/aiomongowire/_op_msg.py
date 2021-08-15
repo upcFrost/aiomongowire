@@ -1,6 +1,6 @@
 import io
 from enum import IntEnum, IntFlag
-from typing import SupportsBytes, List
+from typing import SupportsBytes, List, ClassVar
 
 from ._base_op import BaseOp
 from ._bson import get_bson_parser
@@ -12,6 +12,8 @@ class OpMsg(BaseOp):
     Mongo 3.6+ OP_MSG
     """
     __slots__ = ['flag_bits', 'sections', 'checksum']
+
+    op_code: ClassVar[OpCode] = OpCode.OP_MSG
 
     class PayloadType(IntEnum):
         """
@@ -134,16 +136,12 @@ class OpMsg(BaseOp):
         self.sections = sections
         self.checksum = checksum
 
-    @classmethod
-    def has_reply(cls) -> bool:
+    @property
+    def has_reply(self) -> bool:
         return True
 
     @classmethod
-    def op_code(cls) -> OpCode:
-        return OpCode.OP_MSG
-
-    @classmethod
-    def _from_data(cls, data: io.BytesIO):
+    def from_data(cls, data: io.BytesIO):
         flag_bits = int.from_bytes(data.read(4), byteorder='little', signed=False)  # uint32, message flags
 
         sections = {}

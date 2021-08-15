@@ -19,3 +19,8 @@ class OpCode(IntEnum):
 
     def __bytes__(self):
         return self.to_bytes(length=4, byteorder='little', signed=False)
+
+
+class UnknownOpcodeException(Exception):
+    def __init__(self, opcode: int) -> None:
+        super().__init__(f"Unknown OpCode: {opcode}")

@@ -1,49 +1,46 @@
 import abc
 import io
-from typing import Dict, Type, SupportsBytes
+from typing import Dict, Type, SupportsBytes, ClassVar
 
-from ._op_code import OpCode
+from ._op_code import OpCode, UnknownOpcodeException
 
 _OP_CLASSES_BY_CODE: Dict[OpCode, Type['BaseOp']] = {}
+
+
+def parse_op(op_code: OpCode, data: io.BytesIO) -> 'BaseOp':
+    """
+    Deserialize operation from bytes
+    """
+    try:
+        return _OP_CLASSES_BY_CODE[op_code].from_data(data)
+    except KeyError:
+        raise UnknownOpcodeException(op_code)
 
 
 class BaseOp(SupportsBytes):
     """
     Generic operation. Children should define __bytes__ method
     """
+    op_code: ClassVar[OpCode]
 
     @classmethod
     @abc.abstractmethod
-    def op_code(cls) -> OpCode:
-        pass
-
-    @classmethod
-    @abc.abstractmethod
-    def has_reply(cls) -> bool:
+    def from_data(cls, data: io.BytesIO):
         """
-        True if operation is expected to return something
+        Deserialize operation from bytes.
         """
         pass
 
-    @classmethod
-    def from_data(cls, op_code: OpCode, data: io.BytesIO) -> 'BaseOp':
-        """
-        Deserialize operation from bytes
-
-        :raises KeyError: If operation has unknown OpCode
-        """
-        return _OP_CLASSES_BY_CODE[op_code]._from_data(data)
-
-    @classmethod
+    @property
     @abc.abstractmethod
-    def _from_data(cls, data: io.BytesIO):
+    def has_reply(self) -> bool:
         """
-        Deserialize operation from bytes. Internal implementation.
+        True if OP is expected to have a reply
         """
         pass
 
     def __init_subclass__(cls, **kwargs):
-        _OP_CLASSES_BY_CODE[cls.op_code()] = cls
+        _OP_CLASSES_BY_CODE[cls.op_code] = cls
 
     def __str__(self):
         return f"{self.__class__.__name__}: " + ', '.join([f'{x}: {self.__getattribute__(x)}'

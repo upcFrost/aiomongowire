@@ -1,5 +1,5 @@
 import io
-from typing import List
+from typing import List, ClassVar
 
 from ._base_op import BaseOp
 from ._op_code import OpCode
@@ -11,20 +11,18 @@ class OpKillCursors(BaseOp):
     """
     __slots__ = ['number_of_cursor_ids', 'cursor_ids']
 
-    @classmethod
-    def op_code(cls) -> OpCode:
-        return OpCode.OP_KILL_CURSORS
-
-    @classmethod
-    def has_reply(cls) -> bool:
-        return False
+    op_code: ClassVar[OpCode] = OpCode.OP_KILL_CURSORS
 
     def __init__(self, number_of_cursor_ids: int, cursor_ids: List[int]):
         self.number_of_cursor_ids = number_of_cursor_ids
         self.cursor_ids = cursor_ids
 
+    @property
+    def has_reply(self) -> bool:
+        return False
+
     @classmethod
-    def _from_data(cls, data: io.BytesIO):
+    def from_data(cls, data: io.BytesIO):
         data.seek(4, io.SEEK_CUR)  # 0 - reserved for future use
         # number of cursorIDs in message
         number_of_cursor_ids = int.from_bytes(data.read(4), byteorder='little', signed=True)

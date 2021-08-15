@@ -68,7 +68,7 @@ async def test_send_op_msg_insert(protocol, db_name, collection_name):
     data = MongoWireMessage(header=header, operation=operation)
     result: MongoWireMessage = await protocol.send_data(data)
 
-    assert result.operation.op_code() == OpCode.OP_MSG
+    assert result.operation.op_code == OpCode.OP_MSG
     assert result.header.response_to == header.request_id
 
 
@@ -89,7 +89,7 @@ async def test_send_op_query_no_such_db(protocol, db_name, collection_name):
     data = MongoWireMessage(header=header, operation=operation)
     result: MongoWireMessage = await protocol.send_data(data)
 
-    assert result.operation.op_code() == OpCode.OP_REPLY
+    assert result.operation.op_code == OpCode.OP_REPLY
     assert result.header.response_to == header.request_id
 
 

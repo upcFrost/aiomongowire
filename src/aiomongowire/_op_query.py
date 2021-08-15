@@ -1,6 +1,6 @@
 import io
 from enum import IntFlag
-from typing import Optional
+from typing import Optional, ClassVar
 
 from ._base_op import BaseOp
 from ._bson import get_bson_parser
@@ -15,6 +15,8 @@ class OpQuery(BaseOp):
     __slots__ = ['flags', 'full_collection_name', 'number_to_skip', 'number_to_return', 'query',
                  'return_fields_selector']
 
+    op_code: ClassVar[OpCode] = OpCode.OP_QUERY
+
     class Flags(IntFlag):
         """OP_QUERY flag bits"""
         TAILABLE_CURSOR = 1 << 1  # Cursor is not closed when the last data is retrieved
@@ -25,14 +27,6 @@ class OpQuery(BaseOp):
         EXHAUST = 1 << 6  # Stream the data down full blast in multiple "more" packages
         PARTIAL = 1 << 7  # Get partial results from a mongos if some shards are down
 
-    @classmethod
-    def op_code(cls) -> OpCode:
-        return OpCode.OP_QUERY
-
-    @classmethod
-    def has_reply(cls) -> bool:
-        return True
-
     def __init__(self, full_collection_name: str, query: dict, number_to_skip: int = 0, number_to_return: int = 0,
                  return_fields_selector: Optional[dict] = None, flags: int = 0):
         self.flags = flags
@@ -42,8 +36,12 @@ class OpQuery(BaseOp):
         self.query = query
         self.return_fields_selector = return_fields_selector
 
+    @property
+    def has_reply(self) -> bool:
+        return True
+
     @classmethod
-    def _from_data(cls, data: io.BytesIO):
+    def from_data(cls, data: io.BytesIO):
         # bit vector of query options
         flags = int.from_bytes(data.read(4), byteorder='little', signed=False)
         # "dbname.collection_name"
